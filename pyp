@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/python
 
 import optparse
 import sys
@@ -61,8 +61,6 @@ class Colors(object):
 class PowerPipeList(list,PowerPipeListCustom):
     '''
     defines pp object, allows manipulation of entire input using python list methods
-    @param PowerPipeListCustom: custom list function definitions. default is null class
-    @type PowerPipeListCustom: class
     '''
     def __init__(self, *args):
         super(PowerPipeList, self).__init__(*args)
@@ -77,7 +75,7 @@ class PowerPipeList(list,PowerPipeListCustom):
         @param n_split: number of members produced by split
         @type n_split: int
         @return : new array split up by n_split
-        @rtype : list 
+        @rtype : list<str>
         '''
         sub_out = []
         out = []
@@ -98,7 +96,7 @@ class PowerPipeList(list,PowerPipeListCustom):
         @param delimiter: delimiter used for split
         @type delimiter: str
         @return: new string split by delimiter and joined by ' '
-        @rtype: str
+        @rtype: list<str>
         '''
         return ' '.join(self.get_strings(self)).split(delimiter)
 
@@ -108,7 +106,7 @@ class PowerPipeList(list,PowerPipeListCustom):
         @param delimiter: delimiter used for joining to one line
         @type delimiter: str
         @return: one line output joined by delimiter
-        @rtype: list
+        @rtype: list<str>
         '''
         if [x for x in self if type(x) in [str, PypStr]]:
             return [delimiter.join(self)]
@@ -120,10 +118,8 @@ class PowerPipeList(list,PowerPipeListCustom):
     def uniqer(self):
         '''
         returns only unique elements from list
-        @parm self: list of items
-        @type self: list
         @return: unique items
-        @rtype: list 
+        @rtype: list<str> 
         '''
         return list(set(self.strings))
 
@@ -133,7 +129,7 @@ class PowerPipeList(list,PowerPipeListCustom):
         @param iterables: nested lists containing strs or PypStrs
         @type iterables: list
         @return: unnested list of strings
-        @rtype: list
+        @rtype: list<str>
         '''
         out = []
         if [x for x in iterables if type(x) in [str, PypStr]]:
@@ -148,9 +144,9 @@ class PowerPipeList(list,PowerPipeListCustom):
         '''
         splits a list into one element per line
         @param self: nested list
-        @param type: list
+        @type self: list<str>
         @return: unnested list
-        @rtype: list 
+        @rtype: list<str>
         '''
         return self.get_strings(self)
 
@@ -162,7 +158,7 @@ class PowerPipeList(list,PowerPipeListCustom):
         @param after_n: number of lines to consolidate
         @type after_n: int
         @return: list of after_n members
-        @rtype: list
+        @rtype: list<str>
         '''
         out = []
         n = 0
@@ -183,7 +179,7 @@ class PowerPipeList(list,PowerPipeListCustom):
         @param before_n: number of lines to consolidate
         @type before_n: int
         @return: list of before_n members
-        @rtype: list
+        @rtype: list<str>
         '''
         out = []
         n = 0
@@ -204,7 +200,7 @@ class PowerPipeList(list,PowerPipeListCustom):
         @param matrix_n: number of lines to consolidate
         @type matrix_n: int
         @return: list of matrix_n members
-        @rtype: list
+        @rtype: list<str>
         '''
         out = []
         n = 0
@@ -222,8 +218,7 @@ class PypStr(str,PypStrCustom):
     '''
     defines p string object, allows manipulation of input line by line using python
     string methods
-    @param PowerPipeStrCustom: custom string function definitions. default is null class 
-    @type PowerPipeStrCustom: class
+   
     '''
     def __init__(self, *args):
         super(PypStr, self).__init__()       
@@ -240,7 +235,6 @@ class PypStr(str,PypStrCustom):
         @type self: str
         @return: directory path missing without last directory/file
         @rtype: PypStr
-        
         '''
         return PypStr(os.path.split(self)[0])
 
@@ -248,8 +242,8 @@ class PypStr(str,PypStrCustom):
     def kill(self, to_kill):
         '''
         replaces to_kill with '' in string
-        @param: to_kill:
-        @type: to_kill:
+        @param to_kill: string to remove 
+        @type to_kill: str
         @return: string without to_kill
         @rtype: PypStr
         '''
@@ -260,15 +254,23 @@ class PypList(list,PypListCustom):
     '''
     defines p list object, allows manipulation of input line by line using python
     list methods
-    @param PowerPipeStrCustom: custom list function definitions. default is null class 
-    @type PowerPipeStrCustom: class
     '''
     def __init__(self, *args):
         super(PypList, self).__init__(*args)
 
 
 class Pyp(object):
-    '''pyp engine. manipulates input stream using python methods'''
+    '''
+    pyp engine. manipulates input stream using python methods
+    @ivar history: master record of all manipulations
+    @type history: dict<int:dict>
+    @ivar pwd: current directory
+    @type pwd: str
+    @ivar p: current input line being manipulated
+    @type p: str or list 
+    @ivar n: current input line number
+    @type n: int
+    '''
     
     def __init__(self):
         self.history = {} #dictionary of all data organized input line by input line
@@ -300,11 +302,11 @@ class Pyp(object):
         Substitutes macros without executable commands.
         
         @param cmds: user supplied command set
-        @type cmds: list
+        @type cmds: list<str>
         @param macros: user defined marcros
-        @type macros: dict
+        @type macros: dict<str:dict>
         @return: list of commands to be evaluated
-        @rtype: list
+        @rtype: list<str>
         '''
        
         cmd_array = []
@@ -364,7 +366,7 @@ class Pyp(object):
         @param macro_path: file path to macro file
         @type macro_path: str
         @return: dictionary of user defined macros
-        @rtype: dict
+        @rtype: dict<str:dict>
         '''
         #macro_path = self.macro_path
         if os.path.exists(macro_path):
@@ -379,11 +381,11 @@ class Pyp(object):
         '''
         writes macro file
         @param macros: dictionary of user defined macros
-        @type macros: dict
+        @type macros: dict<str:dict>
         @param macro_path: file path to macro file
         @type macro_path: str
         @param cmds: commands to be saved as a macro
-        @type cmds: list
+        @type cmds: list<str>
         '''
         
         if options.macro_save_name:
@@ -413,7 +415,7 @@ class Pyp(object):
         '''
         deletes macro from file
         @param macros: dictionary of user defined macros
-        @type macros: dict
+        @type macros: dict<str:dict>
         @param macro_path: file path to macro file
         @type macro_path: str
         '''
@@ -433,7 +435,7 @@ class Pyp(object):
         '''
         prints out formated macros, takes dictionary macros as input
         @param macros: dictionary of user defined macros
-        @type macros: dict
+        @type macros: dict<str:dict>
         '''
         if options.macro_list or options.macro_find_name:
             macros_sorted = [x for x in macros]
@@ -451,7 +453,7 @@ class Pyp(object):
         '''
         loads file for pyp processing
         @return: file data
-        @rtype: list
+        @rtype: list<str>
         '''
         if options.text_file:
             if not os.path.exists(options.text_file):
@@ -467,7 +469,7 @@ class Pyp(object):
         @param command: shell command to be evaluated
         @type command: str
         @return: output of shell command
-        @rtype: list
+        @rtype: list<str>
         '''
         sh = [x.strip() for x in os.popen(command).readlines()]
         return sh
@@ -480,7 +482,7 @@ class Pyp(object):
         @param args: optional delimiter. default is ":".
         @type args: list 
         @return: hashed output of shell command based on delimiter
-        @rtype: dict
+        @rtype: dict<str:str>
         
         '''
         if not args:
@@ -502,7 +504,7 @@ class Pyp(object):
         '''
         keeps lines based on string matches
         @param args: strings to search for 
-        @type args: list 
+        @type args: list<str>
         @return: True if any of the strings are found else False
         @rtype: bool
         '''
@@ -520,13 +522,13 @@ class Pyp(object):
         '''
         removes lines based on string matches
         @param args: strings to search for 
-        @type args: list 
+        @type args: list<str> 
         @return: True if any of the strings are not found else False
         @rtype: bool
         '''
         return not self.keep(*args)
 
-    def array_tracer(self, input, power_pipe=False):
+    def array_tracer(self, input,power_pipe=False):
         '''
         generates colored, numbered output for lists and dictionaries and other types
         @param input: one line of input from evaluted pyp command
@@ -541,7 +543,6 @@ class Pyp(object):
        #BASIC VARIABLES
         nf = 0
         output = ''
-
         if power_pipe:
             n_index = Colors.MAGENTA + '[%s]' % (self.n - 1) + Colors.GREEN
         else:
@@ -558,20 +559,20 @@ class Pyp(object):
 
                     output = str(output) + Colors.BOLD + Colors.BLUE + "[%s]" % nf + Colors.OFF + COLOR + str(field) + Colors.GREEN
                 nf = nf + 1
-            return  n_index + Colors.GREEN + Colors.BOLD + '[' + Colors.OFF + output + Colors.GREEN + Colors.BOLD + ']' + Colors.OFF + Colors.GREEN
+            return  n_index + Colors.GREEN + Colors.BOLD + '[' + Colors.OFF + output + Colors.GREEN + Colors.BOLD + ']' + Colors.OFF 
 
 
         elif type(input) in [str, int, PypStr] :
-            return n_index + str(input)
+            return n_index + str(input)  
 
 
         elif type(input) is dict: #deals with dictionaries
             for field in sorted(input,key=lambda x : x.lower()):
                 output = output + Colors.OFF + Colors.BOLD + Colors.BLUE + "'" + field + "'" + Colors.GREEN + ": " + Colors.OFF + Colors.GREEN + str(input[field]) + Colors.BOLD + Colors.GREEN + ',\n '
-            return n_index + Colors.GREEN + Colors.BOLD + '{' + output.strip().strip(' ,') + Colors.GREEN + Colors.BOLD + '}' + Colors.GREEN
+            return n_index + Colors.GREEN + Colors.BOLD + '{' + output.strip().strip(' ,') + Colors.GREEN + Colors.BOLD + '}' + Colors.OFF
 
         else: #catches every else
-            return  n_index + Colors.MAGENTA + str(input) + Colors.GREEN
+            return  n_index + Colors.MAGENTA + str(input) + Colors.OFF
 
     def cmd_split(self, cmds):
         '''
@@ -580,9 +581,9 @@ class Pyp(object):
         Also returns a string_format string that will be used to stitch together
         the output with the proper spacing based on the presence of "+" and ","
         @param cmds: individual commands separated by pipes
-        @type cmds: list
+        @type cmds: list<str>
         @return: individual commands with corresponding string format
-        @rtype: list
+        @rtype: list<str>
         '''
        
         string_format = '%s'
@@ -624,7 +625,7 @@ class Pyp(object):
         @param input_str: input string
         @type input_str: str
         @return: list with no metacharacters
-        @rtype: list
+        @rtype: list<str>
         '''
 
         for char in input_str:
@@ -636,10 +637,8 @@ class Pyp(object):
         '''
         splits self.p based on common metacharacters. returns a
         dictionary of this information.
-        @param self.p: line of pyp input
-        @type self.p: str
         @return: input split up by common metacharacters
-        @rtype: dict
+        @rtype: dict<str:list<str>>
         '''
         
         whitespace =self.p.split(None)
@@ -678,8 +677,6 @@ class Pyp(object):
     def join_and_format(self, join_type):
         '''
         joins self.p arrays with a specified metacharacter  
-        @param self.p: line of pyp input
-        @type self.p: list
         @param join_type: metacharacter to join array 
         @type join_type: str
         @return: string joined by metacharacter
@@ -707,10 +704,8 @@ class Pyp(object):
     def array_joiner(self):
         '''
         generates a dict of self.p arrays joined with various common metacharacters
-        @param self.p: line of pyp input
-        @type self.p: list
         @return: input joined by common metacharacters
-        @rtype: dict
+        @rtype: dict<str:str>
         '''
         whitespace = self.join_and_format(' ')
         slash = self.join_and_format(os.sep)
@@ -749,9 +744,9 @@ class Pyp(object):
         @param file_input: data from file
         @type file_input: list 
         @param second_stream_input: input from second stream 
-        @type second_stream_input: list
+        @type second_stream_input: list<str>
         @return: values of preset variable for direct use by users
-        @rtype: dict
+        @rtype: dict<str:str>
        '''
         #generic variables
         presets = {
@@ -838,7 +833,7 @@ class Pyp(object):
         @param variables: preset variables used for evaluation
         @type variables: dictionary
         @return: output from python evaluation
-        @rtype: list
+        @rtype: list<str>
         '''
         
         if not self.history[self.n]['error'] and self.history[self.n]['output']: #if no errors, go forward 
@@ -873,7 +868,7 @@ class Pyp(object):
         '''
         updates history dictionary with output from python evaluation
         @param total_output: output from python evaluation 
-        @type total_output: list
+        @type total_output: list<str>
         @param power_pipe: presence of powerpipe (pp) in eval
         @type power_pipe: bool
         '''
@@ -904,7 +899,7 @@ class Pyp(object):
         '''
         returns a list of strings from nested lists
         @param iterables: nested list to flatten
-        @type iterables: list
+        @type iterables: list<str>
         '''
         out = []
         if [x for x in iterables if type(x) in [str, PypStr]]:
@@ -920,11 +915,11 @@ class Pyp(object):
         @param cmd: power pipe command
         @type cmd: str
         @param inputs: inputs from std-in or previous python eval
-        @type inputs: list
+        @type inputs: list<str>
         @param power_pipe_type: kind of powerpipe (future use)
         @type power_pipe_type: list
         @return: 'p' and output of python evaluation
-        @rtype: list
+        @rtype: list<str>
         '''
         
         variables = {}
@@ -1005,9 +1000,9 @@ class Pyp(object):
         @param cmd: user command
         @type cmd: str
         @param input_set: input from std-in or previous python evaluation
-        @type input_set: list
+        @type input_set: list<str>
         @return: command, input set, presence of powerpipe
-        @rtype: list
+        @rtype: list<str>
         '''
         #POWER PIPES 
         power_pipe = False #power pipe is off by default
@@ -1026,7 +1021,7 @@ class Pyp(object):
         @param p: input from std-in or previous pyp evaluation
         @type p: list
         @return: will return a string if input is a list and has one member
-        @rtype: list,str
+        @rtype: list<str>,str
         '''
         if  type(p)  in [list, PypList] and len(p) == 1:
             p = p[0]
@@ -1044,9 +1039,9 @@ class Pyp(object):
         @param file_input: inputs from file
         @type file_input: list
         @param cmds: python commands to be evaluated
-        @type cmds: list
+        @type cmds: list<str>
         @param second_stream_input: second stream input
-        @type second_stream_input: list
+        @type second_stream_input: list<str>
         '''
     
         while cmds: #cmds are commands that will be executed on the input stream       
@@ -1092,7 +1087,7 @@ class Pyp(object):
         '''
         generates final output.
         @param total_cmds: all commands executed
-        @type total_cmds: list
+        @type total_cmds: list<str>
         '''
         for self.history_index in self.history:
 
@@ -1199,6 +1194,7 @@ class Pyp(object):
         self.process(inputs, file_input, cmds, second_stream_input,) #recursive processing to generate history dict
 
         self.output(cmds) #output text or execute commands from history dict
+        
 
 
 usage = """    
@@ -1206,7 +1202,7 @@ pyp is a python-centric command line text manipulation tool.  It allows you to f
 and otherwise mangle text using standard python syntax with a few golden-oldie tricks from unix commands
 of the past. You can pipe data into pyp or cut and paste text, and then hit ctrl-D to get your input into pyp.  
     
-After it's in, you can use the standard repetoire of python commands to modify the text. The key variables
+After it's in, you can use the standard repertoire of python commands to modify the text. The key variables
 are "p", which represents EACH LINE of the input as a PYTHON STRING.  and "pp", which represents ALL of the
 inputs as a PYTHON ARRAY. 
 
@@ -1308,68 +1304,85 @@ parser.add_option("-n", "--no_input", action='store_true', help="use with comman
 
 
 manual = ''' 
--------------------------------------------------------------------------------
-            Introduction
--------------------------------------------------------------------------------
-pyp is a command line utility for parsing text output and generating complex unix
-commands using standard python methods. pyp is powered by python, so any standard
-python string or list operation is available.  
+===================================================================================
+PYED PIPER MANUAL
 
-The variable "p" represents EACH line of the input as a python string, so for example,
-you can replace all "FOO" with "GOO" using "p.replace('FOO','GOO')".  Likewise, the 
-variable "pp" represents the ENTIRE input as a python array, so to sort the input 
-alphabetically line-by-line, use "pp.sort()"
+pyp is a command line utility for parsing text output and generating complex
+unix commands using standard python methods. pyp is powered by python, so any
+standard python string or list operation is available.  
+
+The variable "p" represents EACH line of the input as a python string, so for
+example, you can replace all "FOO" with "GOO" using "p.replace('FOO','GOO')".
+Likewise, the variable "pp" represents the ENTIRE input as a python array, so
+to sort the input alphabetically line-by-line, use "pp.sort()"
 
 Standard python relies on whitespace formating such as indentions. Since this 
-is not convenient with command line operations, pyp employs an internal pipe structure
-("|") similar to unix pipes.  This allows passing of the output of one command to the
-input of the next command without nested "(())" structures.  It also allows easy spliting
-and joining of text using single, commonsense variables (see below).  An added bonus
-is that any subresult between pipes is available, making it easy to refer to the original
-input if needed.
+is not convenient with command line operations, pyp employs an internal piping
+structure ("|") similar to unix pipes.  This allows passing of the output of
+one command to the input of the next command without nested "(())" structures.
+It also allows easy spliting and joining of text using single, commonsense 
+variables (see below).  An added bonus is that any subresult between pipes
+is available, making it easy to refer to the original input if needed.
 
-Filtering output is straight forward using python Logic operations. Any output that
-is "True" is kept while anything "False" is eliminated. So "p.isdigit()" will keep all
-lines that are completely numbers. 
+Filtering output is straight forward using python Logic operations. Any output
+that is "True" is kept while anything "False" is eliminated. So "p.isdigit()"
+will keep all lines that are completely numbers. 
 
-The output of pyp has been optimized for typical command line scenarios. For example,
-if text is broken up into an array using the "split()" method, the output will be 
-conveniently numbered by field because a field selection is anticipated.  If the variable 
-"pp" is employed, the output will be numbered line-by-line to facilate picking any
-particular line or range of lines. In both cases, standard python methods (list[start:end])
-can be used to select fields or lines of interest. Also, the standard python string and
-list objects have been overloaded with commonly used methods and attributes. For example,
-"pp.uniq" returns all unique members in an array, will p.kill('foo') will eliminate all 
-"foo" in the input.
+The output of pyp has been optimized for typical command line scenarios. For
+example, if text is broken up into an array using the "split()" method, the
+output will be conveniently numbered by field because a field selection is
+anticipated.  If the variable  "pp" is employed, the output will be numbered
+line-by-line to facilate picking any particular line or range of lines. In
+both cases, standard python methods (list[start:end]) can be used to select
+fields or lines of interest. Also, the standard python string and list objects
+have been overloaded with commonly used methods and attributes. For example,
+"pp.uniq" returns all unique members in an array, will p.kill('foo') will
+eliminate all  "foo" in the input.
 
-pyp commands can be easily saved to disk and recalled using user-defined macros, so a complicated 
-parsing operation requiring 20 or more steps can be recalled easily, providing an alternative
-to quick and dirty scripts.  For more advanced users, these macros can be saved to central
-location, allowing other users to execute them.  Also, an additional text file  (PypCustom.py)
-can be set up that allows additional methods to be added to the pyp str and list methods,
-allowing tight integration with larger facilities data structures or custom tool sets.
+pyp commands can be easily saved to disk and recalled using user-defined macros,
+so a complicated parsing operation requiring 20 or more steps can be recalled
+easily, providing an alternative to quick and dirty scripts. For more advanced
+users, these macros can be saved to central location, allowing other users to
+execute them.  Also, an additional text file (PypCustom.py) can be set up that
+allows additional methods to be added to the pyp str and list methods, allowing
+tight integration with larger facilities data structures or custom tool sets.
 
--------------------------------------------------------------------------------
-            String Operations
--------------------------------------------------------------------------------
-Here is a simple example for splitting the output of "ls" (*nix file list) on '.':''' + Colors.YELLOW + '''
+-----------------------------------------------------------------------------------
+                            PIPING IN THE PIPER
+-----------------------------------------------------------------------------------
+You can pipe data WITHIN a pyp statement using standard unix style pipes ("|"),
+where "p" now represents the evaluation of the python statement before the "|".
+You can also refer back to the ORIGINAL, unadulterated input using the variable
+"o" or "original" at any time...and the variable "h" or "history" allows you
+to refer back to ANY subresult generated between pipes ("|"). 
+
+All pyp statements should be enclosed in double quotes, with single quotes being
+used to enclose any strings.
+
+     echo 'FOO IS AN ' | pyp "p.replace('FOO','THIS') | p + 'EXAMPLE'"
+       ==> THIS IS AN EXAMPLE
+-----------------------------------------------------------------------------------
+                              STRING OPERATIONS
+-----------------------------------------------------------------------------------
+Here is a simple example for splitting the output of "ls" (unix file list) on '.':''' + Colors.YELLOW + '''
 
     ls random_frame.jpg | pyp "p.split('.')"  
-        ==>  [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random_frame' + Colors.BLUE + '[1]' + Colors.YELLOW + 'jpg] ''' + Colors.YELLOW + '''             
+        ==>  [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random_frame' + Colors.BLUE + '[1]' + Colors.YELLOW + 'jpg] ''' + Colors.GREEN + '''             
 
-The variable "p" represents each line piped in from "ls".  Notice the output has index numbers, so it's trivial 
-to pick a particular field or range of fields, ie pyp "p.split('.')[0]"  is the FIRST field.
-There are some pyp generated variables that make this simpler, for example the variable "d" or "dot"
-is the same as p.split('.'):''' + Colors.YELLOW + '''
+The variable "p" represents each line piped in from "ls".  Notice the output has
+index numbers, so it's trivial to pick a particular field or range of fields,
+i.e. pyp "p.split('.')[0]"  is the FIRST field.  There are some pyp generated
+variables that make this simpler, for example the variable "d" or "dot" is the
+same as p.split('.'):''' + Colors.YELLOW + '''
     
     ls random_frame.jpg | pyp "d"  
         ==> [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random_frame' + Colors.BLUE + '[1]' + Colors.YELLOW + '''jpg]
     
     ls random_frame.jpg | pyp "d[0]"
-        ==>   random_frame''' + Colors.OFF + '''
+        ==>   random_frame''' + Colors.GREEN + '''
 
-To Join lists back together, just pipe them to the same or another 
-built in variable(in this case "u", or "underscore"):''' + Colors.YELLOW + '''
+To Join lists back together, just pipe them to the same or another built in
+variable(in this case "u", or "underscore"):''' + Colors.YELLOW + '''
 
     ls random_frame.jpg | pyp "d"  
         ==> [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random_frame' + Colors.BLUE + '[1]' + Colors.YELLOW + '''jpg]
@@ -1380,99 +1393,143 @@ built in variable(in this case "u", or "underscore"):''' + Colors.YELLOW + '''
 To add text, just enclose it in quotes, and use "+" or "," just like python: ''' + Colors.YELLOW + '''
 
     ls random_frame.jpg | pyp "'mkdir seq.tp_' , d[0]+ '_v1/misc_vd8'"  
-        ==> mkdir seq.tp_random_frame_v1/misc_vd8'" ''' + Colors.OFF + '''
-
--------------------------------------------------------------------------------
-            List Operations
--------------------------------------------------------------------------------
-To perform operations that operate on the ENTIRE array of inputs, use the variable "pp",
-which you can manipulate using any standard python list methods. For example, to sort 
-the input, use "pp.sort()". When in array context, each line will be numbered with it's index in 
-the array, so it's easy to, for example select the 6th line of input by using "pp[5]". You can 
-pipe thisback to p to continue modifying this input. There are several methods that have been added
-to facilitate complex operations for these inputs such as keeping unique members or compressing the
+        ==> mkdir seq.tp_random_frame_v1/misc_vd8'" ''' + Colors.GREEN + '''
+-----------------------------------------------------------------------------------
+                              LIST OPERATIONS
+-----------------------------------------------------------------------------------
+To perform operations that operate on the ENTIRE array of inputs, Use the variable
+"pp", which you can manipulate using any standard python list methods. For example,
+to sort the input, use "pp.sort()". When in array context, each line will be
+numbered with it's index in the array, so it's easy to, for example select the 6th
+line of input by using "pp[5]". You can pipe this back to p to continue modifying
+this input. There are several methods that have been added to facilitate complex
+operations for these inputs such as keeping unique members or compressing the
 entire list to one line (pp.uniq, and pp.oneline ...see below).  
--------------------------------------------------------------------------------
-            Mathmatical Operations
--------------------------------------------------------------------------------
-To perform simple math, use the integer or float functions  (int() or float())   and put the math in "()" + ''' + Colors.YELLOW + '''
+-----------------------------------------------------------------------------------
+                              MATH OPERATIONS
+-----------------------------------------------------------------------------------
+To perform simple math, use the integer or float functions  (int() or float())
+and put the math in "()" + ''' + Colors.YELLOW + '''
 
     echo 665 | pyp "(int(p) + 1)"
-       ==> 666 ''' + Colors.OFF + '''
-
--------------------------------------------------------------------------------
-            Logic Filters
--------------------------------------------------------------------------------
-To filter output based on a python function that returns a Booleon (True or False), just pipe the input
-to this function, and all lines that return True will keep their current value, while all lines 
-that return False will be eliminated. ''' + Colors.YELLOW + '''
+       ==> 666 ''' + Colors.GREEN + '''
+-----------------------------------------------------------------------------------
+                              LOGIC FILTERS
+-----------------------------------------------------------------------------------
+To filter output based on a python function that returns a Booleon (True or False)
+..,just pipe the input to this function, and all lines that return True will keep
+their current value, while all lines that return False will be eliminated. ''' + Colors.YELLOW + '''
 
     echo 666 | pyp  "p.isdigit()"
-       ===> 666''' + Colors.OFF + '''
+       ==> 666''' + Colors.GREEN + '''
        
-Keep in mind, that if the Boolean is True, the entire value of p is returned. This comes 
-in handy when you want to test on one field, but use something else. For Example,
-a[2].isdigit() will return p, not a[2] if a[2] is a digit.
+Keep in mind, that if the Boolean is True, the entire value of p is returned.
+This comes in handy when you want to test on one field, but use something else.
+For Example, a[2].isdigit() will return p, not a[2] if a[2] is a digit.
 
 Standard python logic operators such as "and","or","not", and 'in' work as well.
 
 For example to filter output based on the presence of "GOO" in the line, use this:''' + Colors.YELLOW + '''
 
-echo GOO | pyp "'G' in p"
-  ==> GOO'''+ Colors.OFF + '''
+    echo GOO | pyp "'G' in p"
+       ==> GOO'''+ Colors.GREEN + '''
 
-The pyp functions "keep(STR)" and "lose(STR)", and their respective shortcuts, "k(STR)" and "i(STR)",
-are very useful for proving simple OR style string filtering. See Below.
-
--------------------------------------------------------------------------------
-            Second Stream Input
--------------------------------------------------------------------------------
-Normally, pyp receives it's input by piping into it like a standard *nix shell command...
-sometimes it's necessary to combinetwo streams of inputs, such as consolidating the 
-output of two shell commands line by line.  pyp provides for this with the 
-second stream input. Essentially anything after the pyp command that is not 
-associated with an option flag is brought into pyp as the second stream, 
-and can be accessed seperately from the primary stream by using the variable 'sp'
+The pyp functions "keep(STR)" and "lose(STR)", and their respective shortcuts,
+"k(STR)" and "i(STR)", are very useful for proving simple OR style string
+filtering. See Below.
+-----------------------------------------------------------------------------------
+                   SECOND STREAM, TEXT FILE, AND BLANK INPUT
+-----------------------------------------------------------------------------------
+Normally, pyp receives it's input by piping into it like a standard unix shell
+command...sometimes it's necessary to combinetwo streams of inputs, such as
+consolidating the output of two shell commands line by line.  pyp provides
+for this with the second stream input. Essentially anything after the pyp
+command that is not associated with an option flag is brought into pyp as
+the second stream, and can be accessed seperately from the primary stream
+by using the variable 'sp'
 
 To input a second stream of data, just tack on strings or execute (use backticks)
-a command to the end of the pyp command, and then access this array using the variable 'sp'  ''' + Colors.YELLOW + '''
+a command to the end of the pyp command, and then access this array using the
+variable 'sp'  ''' + Colors.YELLOW + '''
 
     echo random_frame.jpg | pyp "p, sp" `echo "random_string"`
-       ===> random_frame.jpg random_string''' + Colors.OFF + '''
+       ===> random_frame.jpg random_string''' + Colors.GREEN + '''
+       
+In a similar way, text input can be read in from a text file using the 
+--text_file flag. You can access the entire file as a list using the variable
+'f', while the variable 'fp' reads in one line at a time. This text file
+capability is very useful for lining up info piped into pyp normally with
+data in a text file like this:''' + Colors.YELLOW + ''' 
 
+    echo normal_input | pyp -text_file example.txt "p, fp" ''' + Colors.GREEN + '''
 
--------------------------------------------------------------------------------
-            Macro Usage
--------------------------------------------------------------------------------
-Macros are a way to permently store useful commands for future recall. They are stored in your home
-directory by default. Facilites are provided to store public macros as well, which is useful for
-sharing complex commands within your work group. Paths to these text files can be reset to anything
-you choose my modifying the PypCustom.py config file.  Macros can become quite complex, and provide
-a useful intermediate between shell commands and scripts, especially for solving one-off problems.
+This setup is geared mostly towards combining data from std-in with that in
+a text file...if the text file is your only data, you should cat it, and pipe
+this into pyp.
 
+If you need to generate output from pyp with no input, use --blank_inputs.
+This is useful for generating text based on line number using the 'n'
+variable.
+-----------------------------------------------------------------------------------
+                              MACRO USAGE
+-----------------------------------------------------------------------------------
+Macros are a way to permently store useful commands for future recall. They are
+stored in your home directory by default. Facilites are provided to store public
+macros as well, which is useful for sharing complex commands within your work group.
+Paths to these text files can be reset to anything you choose my modifying the
+PypCustom.py config file.  Macros can become quite complex, and provide
+a useful intermediate between shell commands and scripts, especially for solving
+one-off problems.  Macro listing, saving, deleting, and searching capabilities are
+accessible using --macrolist, --macro_save, --macro_delete, --macro_find flags.
+Run pyp --help for more details.
 
 you can pyp to and from macros just like any normal pyp command. ''' + Colors.YELLOW + '''
-    pyp "a[0]| my_favorite_macros | 'ls', p" ''' + Colors.OFF + '''
+    pyp "a[0]| my_favorite_macros | 'ls', p" ''' + Colors.GREEN + '''
 
-Note, if the macro returns a list, you can access individual elements using [n] syntax:''' + Colors.YELLOW + '''
-    pyp "my_list_macro[2]" ''' + Colors.OFF + '''
+Note, if the macro returns a list, you can access individual elements using
+[n] syntax:''' + Colors.YELLOW + '''
+    pyp "my_list_macro[2]" ''' + Colors.GREEN + '''
 
-Also, if the macro uses %s, you can append a %(string,..) to then end to string substitute: ''' + Colors.YELLOW + '''
-    pyp "my_string_substitution_macro%('test','case')" ''' + Colors.OFF + '''
+Also, if the macro uses %s, you can append a %(string,..) to then end to string
+substitute: ''' + Colors.YELLOW + '''
+    pyp "my_string_substitution_macro%('test','case')" ''' + Colors.GREEN + '''
 
-------------------------------------------------------------------------------
-            Tips  And Tricks
--------------------------------------------------------------------------------
-If you have to cut and paste data (from an email for example), execute pyp, paste in your data,
-then hit CTRL-D...this will put the data into the disk buffer. Then, just rerun pyp with --rerun,
-and you'll be able to access this data for further pyp manipulations!
+By default, macros are saved in your home directory. This can be modifed to any 
+directory by modifying the user_macro_path attribute in your PypCustom.py. If
+your work in a group, you can also save macros for use by others in a specific
+location by modifying group_macro_path. See the below section on custom 
+methods about how to set up this file.
+-----------------------------------------------------------------------------------
+                              CUSTOM METHODS
+-----------------------------------------------------------------------------------
+pyed pyper relies on overloading the standard python string and list objects
+with it's own custom methods.  If you'd like to try writing your own methods
+either to simplify a common task or integrate custom functions using a 
+propietary API, it's straightforward to do. You'll have to setup a config
+file first:
+    
+    pyp --unmodified_config > PypCustom.py
+    sudo chmod 666 PypCustom.py
+
+There are example functions for string, list, powerpipe, and generic methods.
+to get you started. When pyp runs, it looks for this text file and automatically
+loads any found functions, overloading them into the appropriate objects. You
+can then using your custom methods just like any other pyp function.
+-----------------------------------------------------------------------------------
+                              TIPS AND TRICKS
+-----------------------------------------------------------------------------------
+If you have to cut and paste data (from an email for example), execute pyp, paste
+in your data, then hit CTRL-D...this will put the data into the disk buffer. Then,
+just rerun pyp with --rerun, and you'll be able to access this data for further
+pyp manipulations!
 
 Using --rerun is also great way to buffer data into pyp from long running scripts
 
-pyp is a great way to generate commands before executing them...iteratively keep
-adding commands until you are confident, then use the --execute flag or pipe them to sh.
-You can use ";" to set up dependancies between these commands...which is a great
-way to work out command sequences that would typically be executed in a "foreach" loop.
+pyp is an easy way to generate commands before executing them...iteratively keep
+adding commands until you are confident, then use the --execute flag or pipe them
+to sh.  You can use ";" to set up dependancies between these commands...which is
+a great way to work out command sequences that would typically be executed in a 
+"foreach" loop.
 
 break out complex intermediate steps into macros. macros can be run at point in a 
 pyp command.
@@ -1481,93 +1538,102 @@ If you find yourself shelling out constantly to particular commands, it might
 be worth adding python methods to the PypCustom.py config, especially if you
 are at a large facility.
 
- 
-
--------------------------------------------------------------------------------
-            Variables and Functions
--------------------------------------------------------------------------------
-
+===================================================================================
 HERE ARE THE BUILT IN VARIABLES:
-===============================================================================
-    p   = line output passed from previous command either from shell or pyp
-    pp  = list of ALL pyped in inputs
     
-    o   = original line by line input to pyp    
-    sp  = second steam line input, just like p, but from all non-flag arguments AFTER pyp
+    p        python string of python input line by line
+    pp       python list of ALL pyped in inputs
     
-    quote  = a literal "      (double quotes can't be used in a pyp expression)
-    paran  = a literal '
-    dollar = a literal $
+    original original line by line input to pyp    
+    o        same as original    
+    sp       second steam line input, just like p, but from all non-flag arguments
+             AFTER pyp
+    
+    quote    a literal "      (double quotes can't be used in a pyp expression)
+    paran    a literal '
+    dollar   a literal $
 
-    n  = line counter (1st line is 1, 2nd line is 2,...use the form "(n+3)" to modify this value. 
-    nk = n + 1000
+    n        line counter (1st line is 1, 2nd line is 2,...use the form "(n+3)"
+             to modify this value. 
+    nk       n + 1000
     
-    date = date and time. Returns the current datetime.datetime.now() object.
+    date     date and time. Returns the current datetime.datetime.now() object.
     
-    f   = list based on file input using --file $file
-    fp  = line from file input; fp for FIRST st-in line is the FIRST text file line, and so on
+    f        list based on file input using --file $file
+    fp       line from file input; fp for FIRST st-in line is the FIRST text file
+             line, and so on
     
-    pwd = present working directory
+    pwd      present working directory
     
-    history OR h = history array of all previous results: so pyp "a|u|s|i|h[-3]" shows eval of s
+    history  history array of all previous results:
+               so pyp "a|u|s|i|h[-3]" shows eval of s
+               
+    h        same as history
     
-
+===================================================================================
 THE FOLLOWING ARE SPLIT OR JOINED BASED ON p BEING A STRING OR AN ARRAY:
-=================================================================================
-    s  OR slash      = p split/joined on "/"        
-    d  OR dot        = p split/joined on "."        
-    w  OR whitespace = p split/joined on whitespace (on spaces,tabs,etc)
-    u  OR underscore = p split/joined on '_'       
-    c  OR colon      = p split/joined on ':'       
-    ma OR comma      = p split/joined on ','        
-    m  OR minus      = p split/joined on '-'        
-    a  OR all        = p split on [' '-_=$...]      (on "All" metacharacters)
-''' + Colors.OFF + Colors.RED + '''
+    
+    s  OR slash          p split/joined on "/"        
+    d  OR dot            p split/joined on "."        
+    w  OR whitespace     p split/joined on whitespace (on spaces,tabs,etc)
+    u  OR underscore     p split/joined on '_'       
+    c  OR colon          p split/joined on ':'       
+    mm OR comma          p split/joined on ','        
+    m  OR minus          p split/joined on '-'        
+    a  OR all            p split on [' '-_=$...] (on "All" metacharacters)
 
-Also, the ORIGINAL INPUT line is split on delimiters as above, but stored in os,od,oa,ou,ol,om and oe''' + Colors.OFF + '''
+Also, the ORIGINAL INPUT line is split on delimiters as above, but stored in
+os,od,ow,ou,oc,omm,om and oa''' + Colors.GREEN + '''
 
-
+===================================================================================
 HERE ARE THE BUILT IN FUNCTIONS AND ATTRIBUTES: 
 
-Function                Example         Notes
-===================================================================================
-   ----------------------------------------------------------------------------------
-    p STRING (all python STRING methods like p.replace(STRING1,STRING2) work
-   ----------------------------------------------------------------------------------
-    p.trim()             : removes last file or directory from path from p
-    p.dir                : path  DIRECTORY
-    p.file               : path  FILE
-   ----------------------------------------------------------------------------------                                                    
-    pp LIST (all LIST methods like pp.sort(), pp[-1], and pp.reverse() work
-   ----------------------------------------------------------------------------------
-   pp.delimit(DELIM)     : split input on delimiter instead of newlines
-   pp.divide(N)          : consolidates N consecutive lines to 1 line. 
-   pp.before(STRING, N)  : searches for STRING, colsolidates N lines BEFORE it to same line. Default is 1. 
-   pp.after(STRING, N)   : searches for STRING, colsolidates N lines AFTER  it to same line. Default is 1.
-   pp.matrix(STRING, N)  : returns pp.before(STRING, N) and pp.after(STRING, N). Default is 1.
-   pp.oneliner(DELIM)    : combines all list elements to one line with delimiter
-   pp.uniq               : returns only unique elements
-   pp.unlist             : breaks up ALL arrays up into seperate single lines
-   pp.oneline            : combines all list elements to one line with spaces
-   ----------------------------------------------------------------------------------                                                    
-    native pyp functions 
-   ----------------------------------------------------------------------------------
-   keep(STR1,STR2,...)   : keep all lines that have at least one STRING in them
-   k(STR1,STR2,...)      : shortcut for keep(STR1,STR2,...)
-   lose(STR1,STR2,...)   : lose all lines that have at least one STRING in them
-   i(STR1,STR2,...)      : shortcut for lose(STR1,STR2,...)
+   Function                Notes
+   --------------------------------------------------------------------------------
+         p STRING (all python STRING methods like p.replace(STRING1,STRING2) work
+   --------------------------------------------------------------------------------
+    p.trim()             removes last file or directory from path from p
+    p.dir                path  DIRECTORY
+    p.file               path  FILE
    
-   shell(SCRIPT)         : shell('stat '+p) ==>  returns output of $script
-   shelld(SCRIPT,DELIM)  : shelld('stat '+p)==>  returns output of $script in dictionary key/value seperated on ':' or optional delimeter ''' + Colors.OFF + '''
-   env(ENVIROMENT_VAR)   : returns value of evironment variable using os.environ.get()
-   glob(PATH)            : returns globed files/directories at PATH. Make sure to use '*' wildcard
-HERE ARE SOME SIMPLE EXAMPLES:
-=======================================================================================
-    | pyp "'foo ' + p"                            ==> returns "foo" + current line
-    | pyp "p.replace('x','y') | p + o"            ==> returns current line w/replacement + original line 
-    | pyp "p.split(':')[0]"                       ==> returns first field of string split on ':'
-    | pyp "slash[1:3]"                            ==> returns array of fields 1 and 2 of string split on '/'
-    | pyp "s[1:3]|s"                              ==> returns string of above joined with '/'
+   --------------------------------------------------------------------------------                                                    
+        pp LIST (all LIST methods like pp.sort(), pp[-1], and pp.reverse() work
+   --------------------------------------------------------------------------------
+   pp.delimit(DELIM)     split input on delimiter instead of newlines
+   pp.divide(N)          consolidates N consecutive lines to 1 line. 
+   pp.before(STRING, N)  searches for STRING, colsolidates N lines BEFORE it to
+                         the same line. Default is 1. 
+   pp.after(STRING, N)   searches for STRING, colsolidates N lines AFTER  it to
+                         same line. Default is 1.
+   pp.matrix(STRING, N)  returns pp.before(STRING, N) and pp.after(STRING, N).
+                         Default is 1.
+   pp.oneliner(DELIM)    combines all list elements to one line with delimiter
+   pp.uniq               returns only unique elements
+   pp.unlist             breaks up ALL arrays up into seperate single lines
+   pp.oneline            combines all list elements to one line with spaces
+   
+   --------------------------------------------------------------------------------                                                    
+        native pyp functions 
+   --------------------------------------------------------------------------------
+   keep(STR1,STR2,...)   keep all lines that have at least one STRING in them
+   k(STR1,STR2,...)      shortcut for keep(STR1,STR2,...)
+   lose(STR1,STR2,...)   lose all lines that have at least one STRING in them
+   l(STR1,STR2,...)      shortcut for lose(STR1,STR2,...)
+   
+   shell(SCRIPT)         shell('stat '+p) ==>  returns output of $script
+   shelld(SCRIPT,DELIM)  shelld('stat '+p)==>  returns output of $script in
+                         dictionary key/value seperated on ':' or delimeter
+   env(ENVIROMENT_VAR)   returns value of evironment variable using os.environ.get()
+   glob(PATH)            returns globed files/directories at PATH. Make sure to use
+                         '*' wildcard
+
+SIMPLE EXAMPLES:
+===================================================================================
+   pyp "'foo ' + p"                 ==>  "foo" + current line
+   pyp "p.replace('x','y') | p + o" ==>  current line w/replacement + original line 
+   pyp "p.split(':')[0]"            ==>  first field of string split on ':'
+   pyp "slash[1:3]"                 ==>  array of fields 1 and 2 of string split on '/'
+   pyp "s[1:3]|s"                   ==>  string of above joined with '/'
     
  
 ''' + Colors.OFF
@@ -1644,5 +1710,8 @@ class PypFunctionCustom(object):
 
 
 if __name__ == '__main__':
+   pyp = Pyp().main()
+    
 
-    pyp = Pyp().main()
+        
+        
