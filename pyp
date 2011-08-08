@@ -563,7 +563,7 @@ class Pyp(object):
 
 
         elif type(input) in [str, int, PypStr] :
-            return n_index + str(input)  + Colors.OFF
+            return n_index + str(input)
 
 
         elif type(input) is dict: #deals with dictionaries
