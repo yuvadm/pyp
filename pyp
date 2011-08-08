@@ -544,7 +544,7 @@ class Pyp(object):
         nf = 0
         output = ''
         if power_pipe:
-            n_index = Colors.MAGENTA + '[%s]' % (self.n - 1) + Colors.GREEN
+            n_index = Colors.MAGENTA + '[%s]' % (self.n - 1) + Colors.OFF
         else:
             n_index = ''
         #DEALS WITH DIFFERENT TYPES OF INPUTS
@@ -553,23 +553,23 @@ class Pyp(object):
             for field in input:
                 if not nf == len(input):
                     if type(field)  in [str, PypStr]:
-                        COLOR = Colors.GREEN
+                        COLOR = Colors.OFF
                     else:
                         COLOR = Colors.MAGENTA
 
-                    output = str(output) + Colors.BOLD + Colors.BLUE + "[%s]" % nf + Colors.OFF + COLOR + str(field) + Colors.GREEN
+                    output = str(output) + Colors.BOLD + Colors.BLUE + "[%s]" % nf + Colors.OFF + COLOR + str(field) + Colors.OFF
                 nf = nf + 1
-            return  n_index + Colors.GREEN + Colors.BOLD + '[' + Colors.OFF + output + Colors.GREEN + Colors.BOLD + ']' + Colors.OFF 
+            return  n_index + Colors.OFF + Colors.BOLD + '[' + Colors.OFF + output + Colors.OFF + Colors.BOLD + ']' + Colors.OFF 
 
 
         elif type(input) in [str, int, PypStr] :
-            return n_index + str(input)  
+            return n_index + str(input)  + Colors.OFF
 
 
         elif type(input) is dict: #deals with dictionaries
             for field in sorted(input,key=lambda x : x.lower()):
-                output = output + Colors.OFF + Colors.BOLD + Colors.BLUE + "'" + field + "'" + Colors.GREEN + ": " + Colors.OFF + Colors.GREEN + str(input[field]) + Colors.BOLD + Colors.GREEN + ',\n '
-            return n_index + Colors.GREEN + Colors.BOLD + '{' + output.strip().strip(' ,') + Colors.GREEN + Colors.BOLD + '}' + Colors.OFF
+                output = output + Colors.OFF + Colors.BOLD + Colors.BLUE + "'" + field + "'" + Colors.OFF + ": " + Colors.OFF + Colors.OFF + str(input[field]) + Colors.BOLD + Colors.OFF + ',\n '
+            return n_index + Colors.OFF + Colors.BOLD + '{' + output.strip().strip(' ,') + Colors.GREEN + Colors.BOLD + '}' + Colors.OFF
 
         else: #catches every else
             return  n_index + Colors.MAGENTA + str(input) + Colors.OFF
@@ -1367,7 +1367,7 @@ used to enclose any strings.
 Here is a simple example for splitting the output of "ls" (unix file list) on '.':''' + Colors.YELLOW + '''
 
     ls random_frame.jpg | pyp "p.split('.')"  
-        ==>  [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random_frame' + Colors.BLUE + '[1]' + Colors.YELLOW + 'jpg] ''' + Colors.GREEN + '''             
+        ==>  [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random_frame' + Colors.BLUE + '[1]' + Colors.YELLOW + 'jpg] ''' + Colors.OFF + '''             
 
 The variable "p" represents each line piped in from "ls".  Notice the output has
 index numbers, so it's trivial to pick a particular field or range of fields,
