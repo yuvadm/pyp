@@ -8,7 +8,6 @@ import json
 import glob
 import tempfile
 import datetime
-import json
 import getpass
 
 
