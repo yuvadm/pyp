@@ -670,7 +670,7 @@ class Pyp(object):
             'mm' : comma,
                               }
         #gets rid of empty fields
-        split_variables = dict((x, PypList([PypStr(y) for y in split_variables_raw[x] if y.strip()])) for x in  split_variables_raw)
+        split_variables = dict((x, PypList([PypStr(y) for y in split_variables_raw[x]])) for x in  split_variables_raw)
         return split_variables
 
     def join_and_format(self, join_type):
