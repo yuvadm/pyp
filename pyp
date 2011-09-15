@@ -1,7 +1,7 @@
 #!/usr/bin/env python 
 
 #version 2.03
-#author tobyrosen@
+#author tobyrosen@gmail.com
 
 import optparse
 import sys
