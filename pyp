@@ -1,4 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/env python 
+
+#version 2.03
+#author tobyrosen@
 
 import optparse
 import sys
@@ -9,6 +12,7 @@ import glob
 import tempfile
 import datetime
 import getpass
+import string
 
 
 #try to import user customized classes if they exist. default is null class.
@@ -64,9 +68,6 @@ class PowerPipeList(list,PowerPipeListCustom):
     def __init__(self, *args):
         super(PowerPipeList, self).__init__(*args)
         self.strings = self.get_strings(self)
-        self.oneline = self.get_strings(self.oneliner())
-        self.unlist = self.unlister()
-        self.uniq = self.uniqer()
         
     def divide(self, n_split):
         '''
@@ -80,15 +81,17 @@ class PowerPipeList(list,PowerPipeListCustom):
         out = []
         n = 0
         inputs = self.get_strings(self)
+        
         while inputs:
             input = inputs.pop(0)
             n = n + 1
             sub_out.append(input)
             if not n % n_split or not inputs:
-                out.append(sub_out)
+                out.append([sub_out])
                 sub_out = []
+        
         return out
-
+        
     def delimit(self, delimiter):
         '''
         splits up array based on delimited instead of newlines
@@ -99,7 +102,7 @@ class PowerPipeList(list,PowerPipeListCustom):
         '''
         return ' '.join(self.get_strings(self)).split(delimiter)
 
-    def oneliner(self,delimiter = ' '):
+    def oneline(self,delimiter = ' '):
         '''
         combines list to one line with optional delimeter
         @param delimiter: delimiter used for joining to one line
@@ -108,13 +111,13 @@ class PowerPipeList(list,PowerPipeListCustom):
         @rtype: list<str>
         '''
         if [x for x in self if type(x) in [str, PypStr]]:
-            return [delimiter.join(self)]
+            return self.get_strings([delimiter.join(self)])
 
         else:
             new_output = self.get_strings(self)
             return [delimiter.join(new_output)]
 
-    def uniqer(self):
+    def uniq(self):
         '''
         returns only unique elements from list
         @return: unique items
@@ -139,7 +142,7 @@ class PowerPipeList(list,PowerPipeListCustom):
 
         return out
 
-    def unlister(self):
+    def unlist(self):
         '''
         splits a list into one element per line
         @param self: nested list
@@ -167,7 +170,6 @@ class PowerPipeList(list,PowerPipeListCustom):
             n = n + 1
             if target in input:
                 out.append([ [input] + inputs[n:n + after_n] ])
-
         return out
 
     def before(self, target, before_n=1):
@@ -238,15 +240,80 @@ class PypStr(str,PypStrCustom):
         return PypStr(os.path.split(self)[0])
 
 
-    def kill(self, to_kill):
+    def kill(self, *args):
         '''
         replaces to_kill with '' in string
-        @param to_kill: string to remove 
-        @type to_kill: str
+        @param args: strings to remove 
+        @type args : strs
         @return: string without to_kill
         @rtype: PypStr
         '''
-        return PypStr(self.replace(to_kill, ''))
+        for arg in args:
+            self = self.replace(arg, '')
+        
+        return PypStr(self)
+    
+    def letters(self):
+        '''
+        returns only letters
+        @return: list of strings with only letters
+        @rtype: PypList
+        '''
+           
+        new_string=''
+        for letter in list(self):
+            if letter.isalpha():
+                new_string = new_string + letter
+            else:
+                new_string = new_string + ' '
+        return [PypStr(x) for x in new_string.split() if x]
+    
+    def punctuation(self):
+        '''
+        returns only punctuation
+        @return: list of strings with only punctuation
+        @rtype: PypList
+        '''
+           
+        new_string=''
+        for letter in list(self):
+            if letter in string.punctuation:
+                new_string = new_string + letter
+            else:
+                new_string = new_string + ' '
+        return [PypStr(x) for x in new_string.split() if x]
+    
+    def digits(self):
+        '''
+        returns only digits
+        @return: list of string with only digits
+        @rtype: PypList
+        '''
+        new_string=''
+        for letter in list(self):
+            if letter.isdigit():
+                new_string = new_string + letter
+            else:
+                new_string = new_string + ' '
+        return [PypStr(x) for x in new_string.split() if x]
+        
+    
+    
+    def clean(self,delim = '_'):
+        '''   
+        returns a metacharater sanitized version of input. ignores underscores and slashes and dots.
+        @return: string with delim (default '_') replacing bad metacharacters
+        @rtype: PypStr
+        @param delim: delimeter to rejoin cleaned string with. default is "_"
+        @type delime: str 
+        
+        '''
+        
+        for char in self:
+            if not char.isalnum() and char not in ['/','.',delim]:
+                self = self.replace(char, ' ')
+        return PypStr(delim.join([x for x in self.split() if x.strip()]))
+        
     
     
 class PypList(list,PypListCustom):
@@ -273,7 +340,10 @@ class Pyp(object):
     
     def __init__(self):
         self.history = {} #dictionary of all data organized input line by input line
-        self.pwd = os.getcwd()
+        try: #occasionally, python loses pwd info
+            self.pwd = os.getcwd()
+        except:
+            self.pwd =''
         
     def get_custom_macro_paths(self):
         '''returns customized paths to macro files if they are setup'''
@@ -537,13 +607,17 @@ class Pyp(object):
         @return: colored output based on input contents
         @rtype: str
         '''
-        if not input: #TRANSLATE FALSES TO EMPTY STRINGS OR ARRAYS
-            return ''
+        if not input and input is not 0: #TRANSLATE FALSES TO EMPTY STRINGS OR ARRAYS. SUPPLIES DUMMY INPUT TO KEEP LINES IF NEEDED.
+            if options.keep_false:
+                input =' '
+            else:
+                return ''
        #BASIC VARIABLES
+        
         nf = 0
         output = ''
         if power_pipe:
-            n_index = Colors.MAGENTA + '[%s]' % (self.n - 1) + Colors.GREEN
+            n_index = Colors.MAGENTA + '[%s]' % (self.n) + Colors.GREEN
         else:
             n_index = ''
         #DEALS WITH DIFFERENT TYPES OF INPUTS
@@ -590,26 +664,31 @@ class Pyp(object):
         cmd = ''
         open_quote = False
         open_parenth = 0
+        open_bracket = 0
 
         for letter in cmds:
-
+            
             if letter in [ "'" , '"']:
                 if cmd and cmd[-1] == '\\':
                     open_quote = True
                 else:
                     open_quote = not open_quote
 
-            if not open_quote:
+            if not open_quote: #this all ignores text in () or [] from being split by by , or + 
                 if letter == '(' :
                     open_parenth = open_parenth + 1
                 elif letter == ')':
-                    open_parenth = open_parenth - 1
-
-                if not open_parenth and letter in [',', '+']:
-                        cmd_array.append(cmd)
-                        cmd = ''
-                        string_format = string_format + letter.replace('+', '%s').replace(',', ' %s')
-                        continue
+                    open_parenth = open_parenth - 1    
+                elif letter == '[' :
+                    open_bracket = open_bracket + 1
+                elif letter == ']':
+                    open_bracket = open_bracket - 1
+                
+                if not open_parenth and not open_bracket and letter in [',', '+']: #these are actual formatting characters
+                    cmd_array.append(cmd)
+                    cmd = ''
+                    string_format = string_format + letter.replace('+', '%s').replace(',', ' %s')
+                    continue
 
             cmd = cmd + letter
 
@@ -747,6 +826,8 @@ class Pyp(object):
         @return: values of preset variable for direct use by users
         @rtype: dict<str:str>
        '''
+        
+        
         #generic variables
         presets = {
                      'n' : self.n,
@@ -759,8 +840,6 @@ class Pyp(object):
                      'lose': self.lose,
                      'k': self.keep,
                      'l':self.lose,
-                     'h': self.history[self.n]['history'],
-                     'history':self.history[self.n]['history'],
                      'quote': '"',
                      'apost':"'",
                      'qu':'"',
@@ -769,8 +848,20 @@ class Pyp(object):
                      'date': datetime.datetime.now(),
                      'env': os.environ.get,
                      'glob' : glob.glob,
-                             }
-
+                     'letters': string.letters,
+                     'digits': string.digits,
+                     'punctuation': string.punctuation,
+                     'pstr':(PypStr),
+                             }        
+        
+        #removes nested entries from history
+        history = []
+        for hist in self.history[self.n]['history']:
+            if type(hist) in (list,PypList):
+                hist = self.unlist_p(hist)
+            history.append(hist)
+        presets['history'] = presets['h'] = history
+        
         # file
         if options.text_file:
             try:
@@ -819,7 +910,6 @@ class Pyp(object):
         self.history[self.n]['history'].append(self.p) # records current p
         self.history[self.n]['string_format'] = [] #used for formating output
         self.history[self.n]['original_splits'] = {}#dict of original splits
-        self.history[self.n]['powerpipe'] = False
         self.history[self.n]['output'] = True
 
     def safe_eval(self, cmd, variables):
@@ -851,10 +941,10 @@ class Pyp(object):
                         break
                     #totals output for each cm
                     try:
-                        if output == True and str(output)== 'True': #allows truth tests
+                        if output is True : #allows truth tests
                             output = self.p
                     except:
-                        pass
+                        pass                    
                     
                     total_output.append(output)
 
@@ -871,24 +961,20 @@ class Pyp(object):
         @param power_pipe: presence of powerpipe (pp) in eval
         @type power_pipe: bool
         '''
-        
-        if not total_output or not [x for x in total_output if x] or  self.history[self.n]['error']:
+        if (not total_output or not [x for x in total_output if x] or  self.history[self.n]['error']) and total_output != [0]: #kill irrelevant output
             self.history[self.n]['history'].append('')
             self.history[self.n]['output']=''
-        else:
+        else: # good output
             string_format = self.history[self.n]['string_format'][-1]
             output_array = []
             history_array = []
             contains_list = False
             for out in total_output: # forms an array called_output array of strings or array_traced strings
-
                 output_array.append(self.array_tracer(out, power_pipe)) # for output
                 history_array.append(out) # for feeding back to pipe
-
                 contains_list = True if type(out) not in [str, int, PypStr] else False
 
             self.history[self.n]['output'] = string_format % (tuple(output_array))
-
             if contains_list: #this section prevents buildup of recursive lists.
                 self.history[self.n]['history'].append(total_output) # just adds list to total output if list
             else:
@@ -923,15 +1009,14 @@ class Pyp(object):
         
         variables = {}
         self.history = {}
-    
+        padded_output = []
         inputs = self.flatten_list(inputs)
         
-        inputs = [x for x in inputs if x] #gets rid of empty input
-                    
         variables[power_pipe_type] = PowerPipeList(inputs)
+        variables['pstr'] = PypStr #useful for list comps
 
         try:
-            output = eval(cmd, variables) #500 lines of code wrap this line!!!
+            output = eval(cmd, variables) #1000 lines of code wrap this line!!!
         except KeyboardInterrupt:
             print Colors.RED + "killed by user" + Colors.OFF
             sys.exit()
@@ -950,7 +1035,7 @@ class Pyp(object):
 
         if [x for x in output if type(x) in [tuple]]:#changes tuples to lists 
             output = [PypList(x) for x in output if type(x) in [tuple]]
-
+                
         return 'p', output
 
     def detect_power_pipe(self, command, power_pipe_type):
@@ -1024,7 +1109,7 @@ class Pyp(object):
         '''
         if  type(p)  in [list, PypList] and len(p) == 1:
             p = p[0]
-
+        
         return p
 
     def process(self, inputs, file_input, cmds, second_stream_input):
@@ -1044,9 +1129,8 @@ class Pyp(object):
         '''
     
         while cmds: #cmds are commands that will be executed on the input stream       
-            self.n = 0
+            self.n = -1
             cmd = cmds.pop(0)
-
             cmd, input_set, power_pipe = self.format_input(cmd, inputs)
             #MAIN LOOP 
             while input_set:
@@ -1089,7 +1173,6 @@ class Pyp(object):
         @type total_cmds: list<str>
         '''
         for self.history_index in self.history:
-
             error = self.history[self.history_index]['error']
         
             if not error or "list index out of range" in error[0] or  'string index out of range' in error[0] : #no error
@@ -1098,7 +1181,7 @@ class Pyp(object):
                     cmd = self.history[self.history_index]['history'][-1]
                 else:
                     cmd = self.history[self.history_index]['output']
-
+                
                 if cmd:
                     if options.execute: #executes command        
                         os.system(cmd)
@@ -1233,8 +1316,8 @@ EXAMPLES:
 ------------------------------------------------------------------------------
 print all lines                              ==> pyp  "pp"
 sort all input lines                         ==> pyp  "pp.sort()"
-eliminate duplicates                         ==> pyp  "pp.uniq"
-combine all lines to one line                ==> pyp  "pp.oneline"
+eliminate duplicates                         ==> pyp  "pp.uniq()"
+combine all lines to one line                ==> pyp  "pp.oneline()"
 print line after FOO                         ==> pyp  "pp.after('FOO')"
 list comprehenision                          ==> pyp  "[x for x in pp]"
 return to string context after sort          ==> pyp  "pp.sort() | p"
@@ -1247,7 +1330,7 @@ combine line with FOO                        ==> pyp  "p +'FOO'"
 above, but combine with original input       ==> pyp  "p +'FOO'| p + o"
 
 replace FOO with GOO                         ==> pyp  "p.replace('FOO','GOO')"
-remove all GOO                               ==> pyp  "p.kill('GOO')"
+remove all GOO and FOO                       ==> pyp  "p.kill('GOO','FOO')"
 
 string substitution                          ==> pyp  "'%s FOO %s %s GOO'%(p,p,5)"
 
@@ -1278,26 +1361,22 @@ TO SEE EXTENDED HELP, use --manual
 
 
 parser = optparse.OptionParser(usage)
-parser.add_option("-v", "--verbose", action="store_true", help="show all intermediate products")
-parser.add_option("-r", "--rerun", action="store_true", help="rerun based on automatically stored data from the last run")
 
+parser.add_option("-m", "--manual", action='store_true', help="prints out extended help")
 parser.add_option("-l", "--macro_list", action='store_true', help="lists all available macros")
-parser.add_option("-s", "--macro_save", dest='macro_save_name', type='string', help='saves current command as public macro.  EXAMPLE:    pyp -e "great_macro # prints first letter" "p[1]"')
+parser.add_option("-s", "--macro_save", dest='macro_save_name', type='string', help='saves current command as macro. use "#" for adding comments  EXAMPLE:    pyp -s "great_macro # prints first letter" "p[1]"')
 parser.add_option("-f", "--macro_find", dest='macro_find_name', type='string', help='searches for macros with keyword or user name')
 parser.add_option("-d", "--macro_delete", dest='macro_delete_name', type='string', help='deletes specified public macro')
 parser.add_option("-g", "--macro_group", action='store_true', help="specify group macros for save and delete; default is user")
-
-parser.add_option("-t", "--text_file", type='string', help="specify text file to load")
+parser.add_option("-t", "--text_file", type='string', help="specify text file to load. for advanced users, you should typically cat a file into pyp")
 parser.add_option("-x", "--execute", action='store_true', help="execute all commands.")
 parser.add_option("-c", "--turn_off_color", action='store_true', help="prints raw, uncolored output")
-parser.add_option("-m", "--manual", action='store_true', help="prints out extended help")
 parser.add_option("-u", "--unmodified_config", action='store_true', help="prints out generic PypCustom.py config file")
-
 parser.add_option("-b", "--blank_inputs", action='store', type='string', help="generate this number of blank input lines; useful for generating numbered lists with variable 'n'")
 parser.add_option("-n", "--no_input", action='store_true', help="use with command that generates output with no input; same as --dummy_input 1")
+parser.add_option("-k", "--keep_false", action='store_true', help="print blank lines for lines that test as False. default is to filter out False lines from the output")
+parser.add_option("-r", "--rerun", action="store_true", help="rerun based on automatically cached data from the last run. use this after executing \"pyp\", pasting input into the shell, and hitting CTRL-D")
 
-
-#if '-s' in  sys.argv : parser.disable_interspersed_args()
 (options, args) = parser.parse_args()
 
 
@@ -1335,7 +1414,7 @@ line-by-line to facilate picking any particular line or range of lines. In
 both cases, standard python methods (list[start:end]) can be used to select
 fields or lines of interest. Also, the standard python string and list objects
 have been overloaded with commonly used methods and attributes. For example,
-"pp.uniq" returns all unique members in an array, will p.kill('foo') will
+"pp.uniq()" returns all unique members in an array, will p.kill('foo') will
 eliminate all  "foo" in the input.
 
 pyp commands can be easily saved to disk and recalled using user-defined macros,
@@ -1374,25 +1453,42 @@ i.e. pyp "p.split('.')[0]"  is the FIRST field.  There are some pyp generated
 variables that make this simpler, for example the variable "d" or "dot" is the
 same as p.split('.'):''' + Colors.YELLOW + '''
     
-    ls random_frame.jpg | pyp "d"  
+    ls random_frame.jpg | pyp "dot"  
         ==> [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random_frame' + Colors.BLUE + '[1]' + Colors.YELLOW + '''jpg]
     
-    ls random_frame.jpg | pyp "d[0]"
+    ls random_frame.jpg | pyp "dot[0]"
         ==>   random_frame''' + Colors.GREEN + '''
 
 To Join lists back together, just pipe them to the same or another built in
 variable(in this case "u", or "underscore"):''' + Colors.YELLOW + '''
 
-    ls random_frame.jpg | pyp "d"  
+    ls random_frame.jpg | pyp "dot"  
         ==> [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random_frame' + Colors.BLUE + '[1]' + Colors.YELLOW + '''jpg]
     
-    ls random_frame.jpg | pyp "d|underscore"   
+    ls random_frame.jpg | pyp "dot|underscore"   
         ==> random_frame_jpg ''' + Colors.OFF + '''
 
 To add text, just enclose it in quotes, and use "+" or "," just like python: ''' + Colors.YELLOW + '''
 
     ls random_frame.jpg | pyp "'mkdir seq.tp_' , d[0]+ '_v1/misc_vd8'"  
         ==> mkdir seq.tp_random_frame_v1/misc_vd8'" ''' + Colors.GREEN + '''
+        
+A fundamental difference between pyp and standard python is that pyp allows you
+to print out strings and lists on the same line using the standard "+" and ","
+notation that is used for string construction. This allows you to have a string
+and then print out the results of a particular split so it's easy to pick out
+your field of interest: ''' + Colors.YELLOW + '''
+
+    ls random_frame.jpg | pyp "'mkdir', dot"  
+     ==> mkdir [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random_frame' + Colors.BLUE + '[1]' + Colors.YELLOW + '''jpg] '''+ Colors.GREEN + '''
+
+In the same way, two lists can be displayed on the same line using "+" or ",".
+If you are trying to actually combine two lists, enclose them in parantheses:'''  + Colors.YELLOW + '''
+
+    ls random_frame.jpg | pyp "(underscore + dot)" 
+    ==> [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random' + Colors.BLUE  + '[1]' +  Colors.YELLOW  +'frame.jpg'\
+     + Colors.BLUE + '[2]' + Colors.YELLOW + 'random_frame'+ Colors.BLUE + '[3]' + Colors.YELLOW + '''jpg] ''' + Colors.GREEN + '''
+    
 -----------------------------------------------------------------------------------
                               LIST OPERATIONS
 -----------------------------------------------------------------------------------
@@ -1401,9 +1497,10 @@ To perform operations that operate on the ENTIRE array of inputs, Use the variab
 to sort the input, use "pp.sort()". When in array context, each line will be
 numbered with it's index in the array, so it's easy to, for example select the 6th
 line of input by using "pp[5]". You can pipe this back to p to continue modifying
-this input. There are several methods that have been added to facilitate complex
-operations for these inputs such as keeping unique members or compressing the
-entire list to one line (pp.uniq, and pp.oneline ...see below).  
+this input on a line by line basis. There are several methods that have been added
+to facilitate complex operations for these inputs such as keeping unique members
+or compressing the entire list to one line (pp.uniq(), and pp.oneline() ...see 
+below).  
 -----------------------------------------------------------------------------------
                               MATH OPERATIONS
 -----------------------------------------------------------------------------------
@@ -1436,6 +1533,11 @@ For example to filter output based on the presence of "GOO" in the line, use thi
 The pyp functions "keep(STR)" and "lose(STR)", and their respective shortcuts,
 "k(STR)" and "i(STR)", are very useful for proving simple OR style string
 filtering. See Below.
+
+Also note, all lines that test False ('', {}, [], False, 0) are eliminated from
+the output completely. You can instead print out a blank line if something tests
+false using --keep_false. This is useful if you need place holders to keep lists 
+in sync, for example.
 -----------------------------------------------------------------------------------
                    SECOND STREAM, TEXT FILE, AND BLANK INPUT
 -----------------------------------------------------------------------------------
@@ -1522,12 +1624,15 @@ in your data, then hit CTRL-D...this will put the data into the disk buffer. The
 just rerun pyp with --rerun, and you'll be able to access this data for further
 pyp manipulations!
 
+If you have split up a line into a list, and want to process this list line by 
+line, simply pipe the list to pp and then back to p: pyp "w | pp |p"
+
 Using --rerun is also great way to buffer data into pyp from long running scripts
 
 pyp is an easy way to generate commands before executing them...iteratively keep
 adding commands until you are confident, then use the --execute flag or pipe them
 to sh.  You can use ";" to set up dependancies between these commands...which is
-a great way to work out command sequences that would typically be executed in a 
+an easy way to work out command sequences that would typically be executed in a 
 "foreach" loop.
 
 break out complex intermediate steps into macros. macros can be run at point in a 
@@ -1537,37 +1642,47 @@ If you find yourself shelling out constantly to particular commands, it might
 be worth adding python methods to the PypCustom.py config, especially if you
 are at a large facility.
 
+Many command line tools (like stat) use a KEY:VALUE format. The shelld function
+will turn this into a python dictionary, so you can access specific data using
+their respective keys by using something like this: shelld(COMMAND)[KEY] 
+
 ===================================================================================
 HERE ARE THE BUILT IN VARIABLES:
     
     p        python string of python input line by line
     pp       python list of ALL pyped in inputs
+    sp       second steam line input, just like p, but from all non-flag arguments
+             AFTER pyp command
     
     original original line by line input to pyp    
     o        same as original    
-    sp       second steam line input, just like p, but from all non-flag arguments
-             AFTER pyp
     
+
     quote    a literal "      (double quotes can't be used in a pyp expression)
     paran    a literal '
     dollar   a literal $
 
-    n        line counter (1st line is 1, 2nd line is 2,...use the form "(n+3)"
+    n        line counter (1st line is 0, 2nd line is 1,...use the form "(n+3)"
              to modify this value. 
     nk       n + 1000
     
     date     date and time. Returns the current datetime.datetime.now() object.
+    pwd      present working directory
     
     f        list based on file input using --file $file
     fp       line from file input; fp for FIRST st-in line is the FIRST text file
              line, and so on
     
-    pwd      present working directory
-    
     history  history array of all previous results:
                so pyp "a|u|s|i|h[-3]" shows eval of s
-               
     h        same as history
+    
+    digits   all numbers [0-9]
+    letters  all upper and lowercase letters (useful when combined with variable n).
+             letters[n] will print out "a" on the first line, "b" on the second...
+    punctuation all punctuation [!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]
+    
+    
     
 ===================================================================================
 THE FOLLOWING ARE SPLIT OR JOINED BASED ON p BEING A STRING OR AN ARRAY:
@@ -1581,38 +1696,52 @@ THE FOLLOWING ARE SPLIT OR JOINED BASED ON p BEING A STRING OR AN ARRAY:
     m  OR minus          p split/joined on '-'        
     a  OR all            p split on [' '-_=$...] (on "All" metacharacters)
 
-Also, the ORIGINAL INPUT line is split on delimiters as above, but stored in
-os,od,ow,ou,oc,omm,om and oa''' + Colors.GREEN + '''
+Also, the ORIGINAL INPUT (history[0]) lines are split on delimiters as above, but 
+stored in os, od, ow, ou, oc, omm, om and oa as well as oslash, odot, owhitepace,
+ocomma, ominus, and oall''' + Colors.GREEN + '''
 
 ===================================================================================
 HERE ARE THE BUILT IN FUNCTIONS AND ATTRIBUTES: 
 
    Function                Notes
    --------------------------------------------------------------------------------
-         p STRING (all python STRING methods like p.replace(STRING1,STRING2) work
+        STRING     (all python STRING methods like p.replace(STRING1,STRING2) work)
    --------------------------------------------------------------------------------
+    p.digits()           returns a list of contiguous numbers present in p
+    p.letters()          returns a list of contiguous letters present in p
+    p.punctuation()      returns a list of contiguous punctuation present in p
+    
     p.trim()             removes last file or directory from path from p
-    p.dir                path  DIRECTORY
-    p.file               path  FILE
+    p.kill(STR1,STR2...) removes specified strings 
+    p.clean(delimeter)   removes all metacharacters except for slashes, dots and 
+                         the joining delimeter (default is "_") 
+    
+    p.dir                directory of path
+    p.file               file name of path
+   
+    These fuctions will work with all pyp strings eg: p, o, dot[0], p.trim(),etc. 
+    Strings returned by native python functions (like split) won't have these 
+    available, but you can still access them using pstr(STRING). See below.  
    
    --------------------------------------------------------------------------------                                                    
-        pp LIST (all LIST methods like pp.sort(), pp[-1], and pp.reverse() work
+        LIST        (all LIST methods like pp.sort(), pp[-1], and pp.reverse() work)
    --------------------------------------------------------------------------------
    pp.delimit(DELIM)     split input on delimiter instead of newlines
    pp.divide(N)          consolidates N consecutive lines to 1 line. 
    pp.before(STRING, N)  searches for STRING, colsolidates N lines BEFORE it to
-                         the same line. Default is 1. 
+                         the same line. Default N is 1. 
    pp.after(STRING, N)   searches for STRING, colsolidates N lines AFTER  it to
-                         same line. Default is 1.
+                         same line. Default N is 1.
    pp.matrix(STRING, N)  returns pp.before(STRING, N) and pp.after(STRING, N).
-                         Default is 1.
-   pp.oneliner(DELIM)    combines all list elements to one line with delimiter
-   pp.uniq               returns only unique elements
-   pp.unlist             breaks up ALL arrays up into seperate single lines
-   pp.oneline            combines all list elements to one line with spaces
+                         Default N is 1.
+   pp.oneline(DELIM)     combines all list elements to one line with delimiter.
+                         Default delimeter is space.
+   pp.uniq()             returns only unique elements
+   pp.unlist()           breaks up ALL arrays up into seperate single lines
+   pp.oneline()          combines all list elements to one line with spaces
    
    --------------------------------------------------------------------------------                                                    
-        native pyp functions 
+        NATIVE PYP FUNCTIONS
    --------------------------------------------------------------------------------
    keep(STR1,STR2,...)   keep all lines that have at least one STRING in them
    k(STR1,STR2,...)      shortcut for keep(STR1,STR2,...)
@@ -1625,6 +1754,8 @@ HERE ARE THE BUILT IN FUNCTIONS AND ATTRIBUTES:
    env(ENVIROMENT_VAR)   returns value of evironment variable using os.environ.get()
    glob(PATH)            returns globed files/directories at PATH. Make sure to use
                          '*' wildcard
+   pstr(STR)             turns a str object into an PypStr object, allowing use 
+                         of custom pyp methods listed above. 
 
 SIMPLE EXAMPLES:
 ===================================================================================
@@ -1633,8 +1764,6 @@ SIMPLE EXAMPLES:
    pyp "p.split(':')[0]"            ==>  first field of string split on ':'
    pyp "slash[1:3]"                 ==>  array of fields 1 and 2 of string split on '/'
    pyp "s[1:3]|s"                   ==>  string of above joined with '/'
-    
- 
 ''' + Colors.OFF
 
 
@@ -1709,8 +1838,10 @@ class PypFunctionCustom(object):
 
 
 if __name__ == '__main__':
-   pyp = Pyp().main()
-    
-
+    try:
+       pyp = Pyp().main()
+    except Exception, err:
+        print Colors.RED + str(err) + Colors.OFF 
+   
         
         
