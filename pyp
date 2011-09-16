@@ -1,6 +1,6 @@
 #!/usr/bin/env python 
 
-#version 2.03
+#version 2.04
 #author tobyrosen@gmail.com
 
 import optparse
@@ -13,6 +13,7 @@ import tempfile
 import datetime
 import getpass
 import string
+import re
 
 
 #try to import user customized classes if they exist. default is null class.
@@ -306,14 +307,27 @@ class PypStr(str,PypStrCustom):
         @rtype: PypStr
         @param delim: delimeter to rejoin cleaned string with. default is "_"
         @type delime: str 
-        
         '''
         
         for char in self:
             if not char.isalnum() and char not in ['/','.',delim]:
                 self = self.replace(char, ' ')
         return PypStr(delim.join([x for x in self.split() if x.strip()]))
+    
+    def re(self,to_match):
+        '''   
+        returns characters that match a regex using to_match
+        @return: portion of string that matches regex
+        @rtype: PypStr
+        @param to_match: regex used for matching
+        @type to_match: str 
+        '''
         
+        match = re.search(to_match,self)
+        if match:
+            return PypStr(match.group(0))
+        else:
+            return ''
     
     
 class PypList(list,PypListCustom):
@@ -569,6 +583,34 @@ class Pyp(object):
 
         return shd
 
+    
+    def rekeep(self,to_match):
+        '''
+        keeps lines based on regex string matches
+        @param to_match: regex
+        @type to_match: str
+        @return: True if any of the strings match regex else False
+        @rtype: bool
+        '''
+        
+        match = re.search(to_match,self.p)
+        if match:
+            return True
+        else:
+            return False
+    
+    def relose(self,to_match):
+        '''
+        loses lines based on regex string matches
+        @param to_match: regex
+        @type to_match: str
+        @return: False if any of the strings match regex else True
+        @rtype: bool
+        '''
+        
+        return not self.rekeep(to_match)
+    
+    
     def keep(self,*args):
         '''
         keeps lines based on string matches
@@ -840,6 +882,10 @@ class Pyp(object):
                      'lose': self.lose,
                      'k': self.keep,
                      'l':self.lose,
+                     'rekeep':self.rekeep,
+                     'relose':self.relose,
+                     'rek':self.rekeep,
+                     'rel':self.relose,
                      'quote': '"',
                      'apost':"'",
                      'qu':'"',
@@ -1714,7 +1760,9 @@ HERE ARE THE BUILT IN FUNCTIONS AND ATTRIBUTES:
     p.trim()             removes last file or directory from path from p
     p.kill(STR1,STR2...) removes specified strings 
     p.clean(delimeter)   removes all metacharacters except for slashes, dots and 
-                         the joining delimeter (default is "_") 
+                         the joining delimeter (default is "_")
+    p.re(REGEX)          returns portion of string that matches REGEX regular 
+                         expression. works great with p.replace(p.re(REGEX),STR) 
     
     p.dir                directory of path
     p.file               file name of path
@@ -1748,9 +1796,14 @@ HERE ARE THE BUILT IN FUNCTIONS AND ATTRIBUTES:
    lose(STR1,STR2,...)   lose all lines that have at least one STRING in them
    l(STR1,STR2,...)      shortcut for lose(STR1,STR2,...)
    
-   shell(SCRIPT)         shell('stat '+p) ==>  returns output of $script
-   shelld(SCRIPT,DELIM)  shelld('stat '+p)==>  returns output of $script in
-                         dictionary key/value seperated on ':' or delimeter
+   rekeep(REGEX)         keep all lines that match REGEX regular expression
+   rek(REGEX)            shortcut for keep(REGEX)
+   relose(REGEX)         lose all lines that match REGEX regular expression
+   rel(REGEX)            shortcut for lose(REGEX)
+   
+   shell(SCRIPT)         returns output of SCRIPT
+   shelld(SCRIPT,DELIM)  returns output of SCRIPT in dictionary key/value seperated 
+                         on ':' (default) or supplied delimeter
    env(ENVIROMENT_VAR)   returns value of evironment variable using os.environ.get()
    glob(PATH)            returns globed files/directories at PATH. Make sure to use
                          '*' wildcard
