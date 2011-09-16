@@ -1797,9 +1797,9 @@ HERE ARE THE BUILT IN FUNCTIONS AND ATTRIBUTES:
    l(STR1,STR2,...)      shortcut for lose(STR1,STR2,...)
    
    rekeep(REGEX)         keep all lines that match REGEX regular expression
-   rek(REGEX)            shortcut for keep(REGEX)
+   rek(REGEX)            shortcut for rekeep(REGEX)
    relose(REGEX)         lose all lines that match REGEX regular expression
-   rel(REGEX)            shortcut for lose(REGEX)
+   rel(REGEX)            shortcut for relose(REGEX)
    
    shell(SCRIPT)         returns output of SCRIPT
    shelld(SCRIPT,DELIM)  returns output of SCRIPT in dictionary key/value seperated 
