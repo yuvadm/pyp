@@ -1,6 +1,6 @@
 #!/usr/bin/env python 
 
-#version 2.04
+#version 2.05
 #author tobyrosen@gmail.com
 
 import optparse
@@ -911,14 +911,14 @@ class Pyp(object):
         # file
         if options.text_file:
             try:
-                fp = file_input[self.n - 1]
+                fp = file_input[self.n]
             except IndexError:
                 fp = ''
             presets['fp'] = fp
 
         # second stream
         try:
-            sp = second_stream_input[self.n - 1]
+            sp = second_stream_input[self.n]
         except IndexError:
             sp = ''
         
