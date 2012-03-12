@@ -1,5 +1,5 @@
 #!/usr/bin/env python 
-#version 2.10
+#version 2.11
 #author tobyrosen@gmail.com
 import optparse
 import sys
@@ -11,6 +11,7 @@ import tempfile
 import datetime
 import getpass
 import re
+
 
 #try to import user customized classes if they exist. default is null class.
 try:
@@ -1479,7 +1480,7 @@ class Docs():
     variables (see below).  An added bonus is that any subresult between pipes
     is available, making it easy to refer to the original input if needed.
     
-    Filtering output is straight forward using python Logic operations. Any output
+    Filtering output is straightforward using python Logic operations. Any output
     that is "True" is kept while anything "False" is eliminated. So "p.isdigit()"
     will keep all lines that are completely numbers. 
     
@@ -1487,17 +1488,17 @@ class Docs():
     example, if text is broken up into an array using the "split()" method, the
     output will be conveniently numbered by field because a field selection is
     anticipated.  If the variable  "pp" is employed, the output will be numbered
-    line-by-line to facilate picking any particular line or range of lines. In
+    line-by-line to facilitate picking any particular line or range of lines. In
     both cases, standard python methods (list[start:end]) can be used to select
     fields or lines of interest. Also, the standard python string and list objects
     have been overloaded with commonly used methods and attributes. For example,
-    "pp.uniq()" returns all unique members in an array, will p.kill('foo') will
+    "pp.uniq()" returns all unique members in an array, and p.kill('foo') will
     eliminate all  "foo" in the input.
     
     pyp commands can be easily saved to disk and recalled using user-defined macros,
     so a complicated parsing operation requiring 20 or more steps can be recalled
     easily, providing an alternative to quick and dirty scripts. For more advanced
-    users, these macros can be saved to central location, allowing other users to
+    users, these macros can be saved to a central location, allowing other users to
     execute them.  Also, an additional text file (PypCustom.py) can be set up that
     allows additional methods to be added to the pyp str and list methods, allowing
     tight integration with larger facilities data structures or custom tool sets.
@@ -1565,7 +1566,7 @@ class Docs():
         ls random_frame.jpg | pyp "dot[0]"
             ==>   random_frame''' + Colors.GREEN + '''
     
-    To Join lists back together, just pipe them to the same or another built in
+    To Join lists back together, just pipe them to the same or another built-in
     variable(in this case "u", or "underscore"):''' + Colors.YELLOW + '''
     
         ls random_frame.jpg | pyp "dot"  
@@ -1589,7 +1590,7 @@ class Docs():
          ==> mkdir [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random_frame' + Colors.BLUE + '[1]' + Colors.YELLOW + '''jpg] '''+ Colors.GREEN + '''
     
     In the same way, two lists can be displayed on the same line using "+" or ",".
-    If you are trying to actually combine two lists, enclose them in parantheses:'''  + Colors.YELLOW + '''
+    If you are trying to actually combine two lists, enclose them in parentheses:'''  + Colors.YELLOW + '''
     
         ls random_frame.jpg | pyp "(underscore + dot)" 
         ==> [''' + Colors.BLUE + '[0]' + Colors.YELLOW + 'random' + Colors.BLUE  + '[1]' +  Colors.YELLOW  +'frame.jpg'\
@@ -1622,7 +1623,7 @@ class Docs():
     
     The new pp will reflect these changes for all future operations.
     
-    There are several methods that have been added to pythons normal list methods 
+    There are several methods that have been added to python's normal list methods 
     to facilitate common operations. For example, keeping unique members or 
     consolidating all input to a single line can be accomplished with: '''+  Colors.YELLOW + '''
     
@@ -1647,8 +1648,8 @@ class Docs():
     -----------------------------------------------------------------------------------
                                   LOGIC FILTERS
     -----------------------------------------------------------------------------------
-    To filter output based on a python function that returns a Booleon (True or False)
-    ..,just pipe the input to this function, and all lines that return True will keep
+    To filter output based on a python function that returns a Booleon (True or False),
+    just pipe the input to this function, and all lines that return True will keep
     their current value, while all lines that return False will be eliminated. ''' + Colors.YELLOW + '''
     
         echo 666 | pyp  "p.isdigit()"
@@ -1656,7 +1657,7 @@ class Docs():
            
     Keep in mind, that if the Boolean is True, the entire value of p is returned.
     This comes in handy when you want to test on one field, but use something else.
-    For Example, a[2].isdigit() will return p, not a[2] if a[2] is a digit.
+    For example, a[2].isdigit() will return p, not a[2] if a[2] is a digit.
     
     Standard python logic operators such as "and","or","not", and 'in' work as well.
     
@@ -1666,18 +1667,18 @@ class Docs():
            ==> GOO'''+ Colors.GREEN + '''
     
     The pyp functions "keep(STR)" and "lose(STR)", and their respective shortcuts,
-    "k(STR)" and "i(STR)", are very useful for proving simple OR style string
-    filtering. See Below.
+    "k(STR)" and "i(STR)", are very useful for simple OR style string
+    filtering. See below.
     
     Also note, all lines that test False ('', {}, [], False, 0) are eliminated from
     the output completely. You can instead print out a blank line if something tests
-    false using --keep_false. This is useful if you need place holders to keep lists 
+    false using --keep_false. This is useful if you need placeholders to keep lists 
     in sync, for example.
     -----------------------------------------------------------------------------------
                        SECOND STREAM, TEXT FILE, AND BLANK INPUT
     -----------------------------------------------------------------------------------
-    Normally, pyp receives it's input by piping into it like a standard unix shell
-    command...sometimes it's necessary to combine two streams of inputs, such as
+    Normally, pyp receives its input by piping into it like a standard unix shell
+    command, but sometimes it's necessary to combine two streams of inputs, such as
     consolidating the output of two shell commands line by line.  pyp provides
     for this with the second stream input. Essentially anything after the pyp
     command that is not associated with an option flag is brought into pyp as
@@ -1700,11 +1701,11 @@ class Docs():
         echo normal_input | pyp -text_file example.txt "p, fp" ''' + Colors.GREEN + '''
     
     This setup is geared mostly towards combining data from std-in with that in
-    a text file...if the text file is your only data, you should cat it, and pipe
+    a text file.  If the text file is your only data, you should cat it, and pipe
     this into pyp.
     
     If you need to generate output from pyp with no input, use --blank_inputs.
-    This is useful for generating text based on line number using the 'n'
+    This is useful for generating text based on line numbers using the 'n'
     variable.
     
     -----------------------------------------------------------------------------------
@@ -1771,16 +1772,16 @@ class Docs():
     
     By default, macros are saved in your home directory. This can be modifed to any 
     directory by modifying the user_macro_path attribute in your PypCustom.py. If
-    your work in a group, you can also save macros for use by others in a specific
-    location by modifying group_macro_path. See the below section on custom 
+    you work in a group, you can also save macros for use by others in a specific
+    location by modifying group_macro_path. See the section below on custom 
     methods about how to set up this file.
     -----------------------------------------------------------------------------------
                                   CUSTOM METHODS
     -----------------------------------------------------------------------------------
     pyed pyper relies on overloading the standard python string and list objects
-    with it's own custom methods.  If you'd like to try writing your own methods
+    with its own custom methods.  If you'd like to try writing your own methods
     either to simplify a common task or integrate custom functions using a 
-    propietary API, it's straightforward to do. You'll have to setup a config
+    proprietary API, it's straightforward to do. You'll have to setup a config
     file first:
         
         pyp --unmodified_config > PypCustom.py
@@ -1789,27 +1790,27 @@ class Docs():
     There are example functions for string, list, powerpipe, and generic methods.
     to get you started. When pyp runs, it looks for this text file and automatically
     loads any found functions, overloading them into the appropriate objects. You
-    can then using your custom methods just like any other pyp function.
+    can then use your custom methods just like any other pyp function.
     -----------------------------------------------------------------------------------
                                   TIPS AND TRICKS
     -----------------------------------------------------------------------------------
     If you have to cut and paste data (from an email for example), execute pyp, paste
-    in your data, then hit CTRL-D...this will put the data into the disk buffer. Then,
+    in your data, then hit CTRL-D.  This will put the data into the disk buffer. Then,
     just rerun pyp with --rerun, and you'll be able to access this data for further
     pyp manipulations!
     
     If you have split up a line into a list, and want to process this list line by 
     line, simply pipe the list to pp and then back to p: pyp "w | pp |p"
     
-    Using --rerun is also great way to buffer data into pyp from long running scripts
+    Using --rerun is also great way to buffer data into pyp from long-running scripts
     
     pyp is an easy way to generate commands before executing them...iteratively keep
     adding commands until you are confident, then use the --execute flag or pipe them
-    to sh.  You can use ";" to set up dependancies between these commands...which is
+    to sh.  You can use ";" to set up dependencies between these commands...which is
     an easy way to work out command sequences that would typically be executed in a 
     "foreach" loop.
     
-    break out complex intermediate steps into macros. macros can be run at point in a 
+    Break out complex intermediate steps into macros. Macros can be run at any point in a 
     pyp command.
     
     If you find yourself shelling out constantly to particular commands, it might 
@@ -1963,8 +1964,8 @@ class Docs():
        env(ENVIROMENT_VAR)   returns value of evironment variable using os.environ.get()
        glob(PATH)            returns globed files/directories at PATH. Make sure to use
                              '*' wildcard
-       str(STR)             turns any object into an PypStr object, allowing use 
-                            of custom pyp methods as well as normal string methods. 
+       str(STR)              turns any object into an PypStr object, allowing use 
+                             of custom pyp methods as well as normal string methods. 
     
     SIMPLE EXAMPLES:
     ===================================================================================
@@ -1978,85 +1979,84 @@ class Docs():
     
     
     unmodified_config = '''
+#!/usr/bin/env python
+# This must be saved in same directory as pyp (or be in the python path)
+# make sure to name this PypCustom.py and change permission to 666
+
+import sys
+import os
+
+
+class Colors(object):
+    OFF = chr(27) + '[0m'
+    RED = chr(27) + '[31m'
+    GREEN = chr(27) + '[32m'
+    YELLOW = chr(27) + '[33m'
+    MAGENTA = chr(27) + '[35m'
+    CYAN = chr(27) + '[36m'
+    WHITE = chr(27) + '[37m'
+    BLUE = chr(27) + '[34m'
+    BOLD = chr(27) + '[1m'
+    COLORS = [OFF, RED, GREEN, YELLOW, MAGENTA, CYAN, WHITE, BLUE, BOLD]
+
+
+class NoColors(object):
+    OFF = ''
+    RED = ''
+    GREEN =''
+    YELLOW = ''
+    MAGENTA = ''
+    CYAN = ''
+    WHITE =''
+    BLUE =  ''
+    BOLD =  ''
+    COLORS = [OFF, RED, GREEN, YELLOW, MAGENTA, CYAN, WHITE, BLUE, BOLD]
+
+
+class PypCustom(object):
+    'modify below paths to set macro paths'
+    def __init__(self):
+        self.user_macro_path = os.path.expanduser('~')+ '/pyp_user_macros.json'
+        self.group_macro_path = os.path.expanduser('~')+ '/pyp_user_macros.json'
+        self.custom_execute = False
+
+
+class PowerPipeListCustom():
+    'this is used for pp functions (list fuctions like sort) that operate on all inputs at once.'
+    def __init__(self, *args):
+        pass
     
-    #!/usr/bin/env python
-    # This must be saved in same directory as pyp (or be in the python path)
-    # make sure to name this PypCustom.py and change permission to 666
+    def test(self):
+        print 'test' #pp.test() will print "test"
+
+
+class PypStrCustom():   
+    'this is used for string functions using p and other pyp string variables'
+    def __init__(self, *args):
+        self.test_attr = 'test attr'
     
-    import sys
-    import os
-    
-    
-    class Colors(object):
-        OFF = chr(27) + '[0m'
-        RED = chr(27) + '[31m'
-        GREEN = chr(27) + '[32m'
-        YELLOW = chr(27) + '[33m'
-        MAGENTA = chr(27) + '[35m'
-        CYAN = chr(27) + '[36m'
-        WHITE = chr(27) + '[37m'
-        BLUE = chr(27) + '[34m'
-        BOLD = chr(27) + '[1m'
-        COLORS = [OFF, RED, GREEN, YELLOW, MAGENTA, CYAN, WHITE, BLUE, BOLD]
-    
-    
-    class NoColors(object):
-        OFF = ''
-        RED = ''
-        GREEN =''
-        YELLOW = ''
-        MAGENTA = ''
-        CYAN = ''
-        WHITE =''
-        BLUE =  ''
-        BOLD =  ''
-        COLORS = [OFF, RED, GREEN, YELLOW, MAGENTA, CYAN, WHITE, BLUE, BOLD]
-    
-    
-    class PypCustom(object):
-        'modify below paths to set macro paths'
-        def __init__(self):
-            self.user_macro_path = os.path.expanduser('~')+ '/pyp_user_macros.json'
-            self.group_macro_path = os.path.expanduser('~')+ '/pyp_user_macros.json'
-            self.custom_execute = False
-    
-    
-    class PowerPipeListCustom():
-        'this is used for pp functions (list fuctions like sort) that operate on all inputs at once.'
-        def __init__(self, *args):
-            pass
-        
-        def test(self):
-            print 'test' #pp.test() will print "test"
-    
-    
-    class PypStrCustom():   
-        'this is used for string functions using p and other pyp string variables'
-        def __init__(self, *args):
-            self.test_attr = 'test attr'
-        
-        def test(self):
-            print 'test' #p.test() will print "test" is p is a str
-        
-        
-    class PypListCustom():
-        def __init__(self, *args):
-            pass
-    
-        def test(self):
-            print 'test' #p.test() will print "test" is p is a list broken up from a str
+    def test(self):
+        print 'test' #p.test() will print "test" is p is a str
     
     
-    class PypFunctionCustom(object):
-        'this is used for custom functions and variables (non-instance)'
-        test_var = 'works'
-        
-        def __init__(self, *args):
-            pass
-        
-        def test(self):
-            print 'working func '  + self
-    '''
+class PypListCustom():
+    def __init__(self, *args):
+        pass
+
+    def test(self):
+        print 'test' #p.test() will print "test" is p is a list broken up from a str
+
+
+class PypFunctionCustom(object):
+    'this is used for custom functions and variables (non-instance)'
+    test_var = 'works'
+    
+    def __init__(self, *args):
+        pass
+    
+    def test(self):
+        print 'working func '  + self
+'''
 
 
     usage = """    
