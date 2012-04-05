@@ -6,5 +6,5 @@ This is the __unofficial__ git mirror for the pyp project. The original project 
 Installation
 ------------
 
- - On Mac OS X with homebrew, you can just `brew install pyp`
+ - Pyp is now available from PyPI (http://pypi.python.org/pypi/pyp) and can be installed via `pip install pyp` or `easy_install install pyp`. 
  - Otherwise, the easiest way would be to pull the raw pyp script (https://raw.github.com/yuvadm/pyp/master/pyp) and link it to your favorite `bin` location.
