@@ -539,10 +539,10 @@ class Pyp(object):
             macro_ob.close()
             self.load_macros(macro_path)
             if macro_name in macros:
-                print Colors.YELLOW + macro_name , "successfully saved!" + Colors.OFF
+                print(Colors.YELLOW + macro_name , "successfully saved!" + Colors.OFF)
                 sys.exit()
             else:
-                print Colors.RED + macro_name, 'was not saved...unknown error!' + Colors.OFF
+                print(Colors.RED + macro_name, 'was not saved...unknown error!' + Colors.OFF)
                 sys.exit(1)
 
     def delete_macros(self, macros,macro_path):
@@ -559,10 +559,10 @@ class Pyp(object):
                 json_ob = open(macro_path, 'w')
                 json.dump(macros, json_ob)
                 json_ob.close()
-                print Colors.MAGENTA + options.macro_delete_name + " macro has been successfully obliterated" + Colors.OFF
+                print(Colors.MAGENTA + options.macro_delete_name + " macro has been successfully obliterated" + Colors.OFF)
                 sys.exit()
             else:
-                print Colors.RED + options.macro_delete_name + " does not exist" + Colors.OFF
+                print(Colors.RED + options.macro_delete_name + " does not exist" + Colors.OFF)
                 sys.exit(1)
 
     def list_macros(self, macros):
@@ -576,11 +576,11 @@ class Pyp(object):
             macros_sorted.sort()
             for macro_name in macros_sorted:
                 if options.macro_list or options.macro_find_name in macro_name or options.macro_find_name in macros[macro_name]['user']:
-                    print Colors.MAGENTA + macro_name + '\n\t ' + Colors.YELLOW+macros[macro_name]['user'] \
+                    print(Colors.MAGENTA + macro_name + '\n\t ' + Colors.YELLOW+macros[macro_name]['user'] \
                      + '\t' + macros[macro_name]['date']\
                     +'\n\t\t' + Colors.OFF + '"'\
                      + '|'.join(macros[macro_name]['command']) + '"' + Colors.GREEN + '\n\t\t'\
-                      + macros[macro_name].get('comments', '') + Colors.OFF + '\n'
+                      + macros[macro_name].get('comments', '') + Colors.OFF + '\n')
             sys.exit()
 
     def load_file(self):
@@ -591,7 +591,7 @@ class Pyp(object):
         '''
         if options.text_file:
             if not os.path.exists(options.text_file):
-                print Colors.RED + options.text_file + " does not exist" + Colors.OFF
+                print(Colors.RED + options.text_file + " does not exist" + Colors.OFF)
                 sys.exit()
             else:
                 f = [x.rstrip() for x in open(options.text_file) ]
@@ -1046,9 +1046,9 @@ class Pyp(object):
                     try:
                         output = eval(cm, variables) #500 lines of code wrap this line!!!
                     except KeyboardInterrupt:
-                        print Colors.RED + "killed by user" + Colors.OFF
+                        print(Colors.RED + "killed by user" + Colors.OFF)
                         sys.exit()
-                    except Exception, err:
+                    except Exception as err:
                         self.history[self.n]['error'] = Colors.RED + 'error: ' + str(err) + Colors.OFF, Colors.RED + cmd + Colors.OFF
                         break
                     #totals output for each cm
@@ -1091,7 +1091,7 @@ class Pyp(object):
             elif power_pipe ==   'fpp' and file_input:
                 user_output =  [file_input[n]]
             elif power_pipe: #  power pipe variable is referenced, but does not exist.
-                print Colors.RED + "YOU'RE LIST VARIABLE DOES NOT EXIST: " + Colors.GREEN + power_pipe + Colors.OFF
+                print(Colors.RED + "YOU'RE LIST VARIABLE DOES NOT EXIST: " + Colors.GREEN + power_pipe + Colors.OFF)
                 sys.exit()
         except: #default output is null per line
             user_output =[' ']   
@@ -1194,10 +1194,10 @@ class Pyp(object):
         try:
             output = eval(cmd, variables) #1000 lines of code wrap this line!!!
         except KeyboardInterrupt:
-            print Colors.RED + "killed by user" + Colors.OFF
+            print(Colors.RED + "killed by user" + Colors.OFF)
             sys.exit()
-        except Exception, err:
-            print Colors.RED + 'error: ' + str(err) + Colors.OFF, Colors.RED + cmd + Colors.OFF
+        except Exception as err:
+            print(Colors.RED + 'error: ' + str(err) + Colors.OFF, Colors.RED + cmd + Colors.OFF)
             sys.exit()
 
         if output is None: #allows use of inplace methods like sort
@@ -1371,11 +1371,11 @@ class Pyp(object):
                     if options.execute: #executes command        
                         execute_cmds.append(cmd)
                     else:
-                        print cmd # normal output
+                        print(cmd) # normal output
                 elif options.keep_false: #prints blank lines for lost False commands 
-                    print 
+                    print()
             else: #error
-                print Colors.RED + self.history[self.history_index]['error'][0] + Colors.RED + ' : ' + self.history[self.history_index]['error'][1] + Colors.OFF
+                print(Colors.RED + self.history[self.history_index]['error'][0] + Colors.RED + ' : ' + self.history[self.history_index]['error'][1] + Colors.OFF)
         
         if execute_cmds:
             self.final_execute(execute_cmds) 
@@ -1390,11 +1390,11 @@ class Pyp(object):
         '''
 
         if options.manual:
-            print Docs.manual
+            print(Docs.manual)
             sys.exit()
             
         if options.unmodified_config:
-            print Docs.unmodified_config
+            print(Docs.unmodified_config)
             sys.exit()
         
         rerun_path = '/%s/pyp_rerun_%d.txt' %(tempfile.gettempdir(),os.getppid())        
@@ -1406,7 +1406,7 @@ class Pyp(object):
                 if os.path.exists(rerun_gpid_path):
                     rerun_path = rerun_gpid_path
                 else:
-                    print Colors.RED + rerun_path + " does not exist" + Colors.OFF
+                    print(Colors.RED + rerun_path + " does not exist" + Colors.OFF)
                     sys.exit()
             pipe_input = [x.strip() for x in open(rerun_path) if x.strip()]
             #print pipe_input
@@ -2178,8 +2178,8 @@ if __name__ == '__main__':
     
     try:
         pyp = Pyp().main()
-    except Exception, err:
-        print Colors.RED + str(err) + Colors.OFF 
+    except Exception as err:
+        print(Colors.RED + str(err) + Colors.OFF )
    
         
         
