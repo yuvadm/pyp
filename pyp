@@ -1,8 +1,8 @@
 #!/usr/bin/env python 
-#version 2.11.30
+#version 2.13
 #author tobyrosen@gmail.com
                                                                                                                                                                                                                                       
-#Copyright (c) 2011,2012, Sony Pictures Imageworks                                                                                                                                                                                                
+#Copyright (c) 2011-2015 Toby Rosen                                                                                                                                                                                               
 #Distributed under the New BSD License.
 #All rights reserved.                                                                                                                                                                                                                        
 #Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:                                                                                              
@@ -245,15 +245,37 @@ class PowerPipeList(list,PowerPipeListCustom):
         
         return list(set(strings))
 
+    #def flatten_list(self, iterables):
+     #   '''
+      #  returns a list of strings from nested lists
+       # @param iterables: nested lists containing strs or PypStrs
+       # @type iterables: list
+       # @return: unnested list of strings
+       # @rtype: list<str>
+       # '''
+        #return self.pyp.flatten_list(iterables)
+        
     def flatten_list(self, iterables):
         '''
         returns a list of strings from nested lists
-        @param iterables: nested lists containing strs or PypStrs
-        @type iterables: list
-        @return: unnested list of strings
-        @rtype: list<str>
+        @param iterables: nested list to flatten
+        @type iterables: list<str>
         '''
-        return self.pyp.flatten_list(iterables)
+        out = []
+        stack=[[iterables,0,len(iterables)]]
+        while stack:
+            curIter,pos,limit=stack[0]
+            if pos==limit:
+                stack.pop(0)
+                continue
+            if type(curIter[pos]) not in [str, PypStr]:
+                stack[0][1]+=1
+                stack.insert(0,[curIter[pos],0,len(curIter[pos])])
+            else:
+                out.append(curIter[pos])
+                stack[0][1]+=1
+
+        return out
 
     def unlist(self):
         '''
@@ -387,6 +409,65 @@ class PypStr(str,PypStrCustom):
         
         return PypStr(self)
     
+    
+    def rekill(self, *args):
+        '''
+        replace each regex in args found in string with ''
+        @param args: regexes to remove
+        @type args: list<regex>
+        @return: string without the regexes
+        @rtype: PypStr
+        '''
+        
+        for arg in args:
+            self = re.sub(arg, '', self)
+            
+        return PypStr(self)
+    
+    def rereplace(self, regex, replacement):
+        '''
+        replace instances of regex in string with replacement
+        @param regex: the regex to replace
+        @type regex: str
+        @param replacement: the value to insert
+        @type replacement: str
+        @return: String with all instances replaced
+        @rtype: PypStr
+        '''
+        
+        self = re.sub(regex, replacement, self)
+        
+        return PypStr(self)
+
+    def refindall(self, to_match):
+        '''
+        returns a list of all matches of to_match in the string
+        @param to_match: the regex to match
+        @type to_match: str
+        @return: a list of all matches
+        @rtype: PypList
+        '''
+        return PypList(re.findall(to_match, self))
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     def letters(self):
         '''
         returns only letters
@@ -401,6 +482,7 @@ class PypStr(str,PypStrCustom):
             else:
                 new_string = new_string + ' '
         return [PypStr(x) for x in new_string.split() if x]
+        
     
     def punctuation(self):
         '''
@@ -779,8 +861,8 @@ class Pyp(object):
         '''
         
         return not self.rekeep(to_match)
-    
-    
+        
+        
     def keep(self,*args):
         '''
         keeps lines based on string matches
@@ -1673,7 +1755,10 @@ class Pyp(object):
                 self.history[self.n] = self.blank_history()
                 self.history[self.n]['history'].append(self.p)
             
-            if type(self.p) in [ str, PypStr]:                          # p is string    
+            
+            if options.quick:  #bypass split join variables
+                variables={}
+            elif type(self.p) in [ str, PypStr]:                          # p is string    
                 variables = self.string_splitter()
                 if not self.history[self.n]['original_splits']: #makes variables dealing with original input
                    self.history[self.n]['original_splits'] = dict(('o' + x, variables[x]) for x in variables)
@@ -1693,9 +1778,7 @@ class Pyp(object):
             
             total_output = self.safe_eval(cmd, variables)
             self.update_history(total_output,second_stream_input,file_input ,power_pipe)
-            
-            
-    
+          
     
     
     def output(self, total_cmds):
@@ -1705,18 +1788,23 @@ class Pyp(object):
         @type total_cmds: list<str>
         '''
         execute_cmds = []
+        #print self.history
         for self.history_index in self.history:
             error = self.history[self.history_index]['error']
             
             if not error : #no error
                 
                 cmd = self.history[self.history_index]['output'] #color formated output
+                #print cmd
                 #if 1: ########################TESTING
                 if cmd != False: #kept commands
                     if options.execute or options.execute_aux: #executes command        
                         execute_cmds.append(cmd)
+                    elif options.ignore_blanks and not cmd.strip():
+                        pass
                     else:
                         print cmd # normal output
+               
                 elif options.keep_false: #prints blank lines for lost False commands 
                     print  
 
@@ -1743,7 +1831,7 @@ class Pyp(object):
         '''
 
         if options.manual:
-            print Docs.manual
+            print Docs.manual()
             sys.exit()
             
         if options.unmodified_config:
@@ -1770,6 +1858,8 @@ class Pyp(object):
             for n in range(0,end_n):
                 pipe_input.append('')
        
+        
+        
         
         elif options.no_input:
             pipe_input = ['']
@@ -1904,7 +1994,10 @@ class Pyp(object):
 
 
 class Docs():
-    manual = ''' 
+    @classmethod
+    def manual(cls):
+        return '''
+
     ===================================================================================
     PYED PIPER MANUAL
     
@@ -2353,8 +2446,10 @@ class Docs():
         p.clean(delimeter)   removes all metacharacters except for slashes, dots and 
                              the joining delimeter (default is "_")
         p.re(REGEX)          returns portion of string that matches REGEX regular 
-                             expression. works great with p.replace(p.re(REGEX),STR) 
-        
+                             expression. works great with p.replace(p.re(REGEX),STR)
+        p.rekill(RE1,RE2...) removes matches of specified regexes
+        p.rereplace(re, str) replaces all matches of regex with str
+        p.refindall(re)      returns a list of all matches of regex
         p.dir                directory of path
         p.file               file name of path
         p.ext                file extension (jpg, tif, hip, etc) of path
@@ -2592,6 +2687,7 @@ if __name__ == '__main__':
     parser.add_option("-g", "--macro_group", action='store_true', help="specify group macros for save and delete; default is user")
     parser.add_option("-t", "--text_file", type='string', help="specify text file to load. for advanced users, you should typically cat a file into pyp")
     parser.add_option("-x", "--execute", action='store_true', help="execute all commands.")
+    parser.add_option("-q", "--quick", action='store_true', help="turbo mode for fast output. pyp variables not initialized.")
     parser.add_option("-a", "--execute_aux", type='int', help="execute commands with auxillary data with custom executer")
     parser.add_option("-c", "--turn_off_color", action='store_true', help="prints raw, uncolored output")
     parser.add_option("-u", "--unmodified_config", action='store_true', help="prints out generic PypCustom.py config file")
