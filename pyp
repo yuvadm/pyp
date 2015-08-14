@@ -1,22 +1,21 @@
 #!/usr/bin/env python 
-#version 2.12
+#version 2.13
 #author tobyrosen@gmail.com
-"""
-Copyright (c) 2011, Sony Pictures Imageworks
-All rights reserved.
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-OF THE POSSIBILITY OF SUCH DAMAGE.
-"""
-
-
+                                                                                                                                                                                                                                      
+#Copyright (c) 2011-2015 Toby Rosen                                                                                                                                                                                               
+#Distributed under the New BSD License.
+#All rights reserved.                                                                                                                                                                                                                        
+#Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:                                                                                              
+#Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.                                                                                                                
+#Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation                                                                                         
+#and/or other materials provided with the distribution.                                                                                                                                                                                      
+#THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,                                                                                           
+#THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS                                                                                       
+#BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF                                                                                                 
+#SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER                                                                                               
+#IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED                                                                                              
+#OF THE POSSIBILITY OF SUCH DAMAGE.                                                                                                                                                                                                          
+        
 
 import optparse
 import sys
@@ -28,13 +27,14 @@ import tempfile
 import datetime
 import getpass
 import re
+import math
 
 
 #try to import user customized classes if they exist. default is null class.
 try:
     from PypCustom import PypCustom
 except ImportError:
-    class PypCustom():
+    class PypCustom():    
         pass
 
 try:
@@ -88,6 +88,51 @@ class NoColors(object):
     BOLD =  ''
     COLORS = [OFF, RED, GREEN, YELLOW, MAGENTA, CYAN, WHITE, BLUE, BOLD]
       
+
+
+
+class HistoryObject(object):
+    '''
+    wrapped object that allows history to be stored in container. Used for keeping history
+    when rearrangeing pp lists
+    '''
+    def __init__(self, wrapped_obj):
+        self.__wrapped = wrapped_obj
+        self.current = 0
+
+    def wrapped_object(self):
+        return self.__wrapped
+
+    def set_wrapped_object(self, new_value):
+        self.__wrapped = new_value
+    
+    
+    def __len__(self):
+        try:
+            length = len(self.__wrapped_obj)
+        except : #bouleons etc
+            length = 1
+        
+        return length
+    
+    def __getitem__(self, index):
+        return self.__wrapped[index]
+     
+    def __getattr__(self, name):
+         return getattr(self.__wrapped, name)
+
+    def __cmp__(self, other):
+         return cmp(self.__wrapped, other)
+
+    def __str__(self):
+         return str(self.__wrapped)
+        
+    def __contains__(self, item):
+        if item in self.__wrapped:
+            return True
+        else:
+            return False
+    
 class PowerPipeList(list,PowerPipeListCustom):
     '''
     defines pp object, allows manipulation of entire input using python list methods
@@ -99,7 +144,50 @@ class PowerPipeList(list,PowerPipeListCustom):
         except AttributeError:
             pass
         self.pyp = Pyp()
+    
+    def stdDev(self,inputs,mean):
+        sumsq=0.0
+        for i in range(len(inputs)):
+            sumsq += (float(inputs[i])-mean) **2
+        return math.sqrt(sumsq/len(inputs))
+    
+    
+    def stats(self):
         
+        float_pp = [float(x.wrapped_object()) for x in self if x.wrapped_object()]
+      
+        max_pp = max(float_pp)
+        min_pp = min(float_pp)
+        
+        n_pp = len(float_pp)
+        sum_pp = sum(float_pp) 
+        mean_pp = sum_pp / n_pp
+        
+       
+        stddev_pp= self.stdDev(float_pp, mean_pp)
+        
+        stat_pp =[]
+        
+        for p in self:
+            if p.wrapped_object():
+                p.type = dict
+                stat_dict = {}
+                stat_dict['original'] = float(p.wrapped_object())
+                stat_dict['max'] = max_pp
+                stat_dict['min'] = min_pp
+                stat_dict['n'] = n_pp
+                stat_dict['sum'] = sum_pp
+                stat_dict['mean'] = mean_pp
+                stat_dict['stddev'] = stddev_pp
+                
+                p.set_wrapped_object(stat_dict)
+                stat_pp.append(p)
+            
+        return stat_pp
+    
+    
+    
+    
     
     def divide(self, n_split):
         '''
@@ -157,15 +245,37 @@ class PowerPipeList(list,PowerPipeListCustom):
         
         return list(set(strings))
 
+    #def flatten_list(self, iterables):
+     #   '''
+      #  returns a list of strings from nested lists
+       # @param iterables: nested lists containing strs or PypStrs
+       # @type iterables: list
+       # @return: unnested list of strings
+       # @rtype: list<str>
+       # '''
+        #return self.pyp.flatten_list(iterables)
+        
     def flatten_list(self, iterables):
         '''
         returns a list of strings from nested lists
-        @param iterables: nested lists containing strs or PypStrs
-        @type iterables: list
-        @return: unnested list of strings
-        @rtype: list<str>
+        @param iterables: nested list to flatten
+        @type iterables: list<str>
         '''
-        return self.pyp.flatten_list(iterables)
+        out = []
+        stack=[[iterables,0,len(iterables)]]
+        while stack:
+            curIter,pos,limit=stack[0]
+            if pos==limit:
+                stack.pop(0)
+                continue
+            if type(curIter[pos]) not in [str, PypStr]:
+                stack[0][1]+=1
+                stack.insert(0,[curIter[pos],0,len(curIter[pos])])
+            else:
+                out.append(curIter[pos])
+                stack[0][1]+=1
+
+        return out
 
     def unlist(self):
         '''
@@ -177,6 +287,19 @@ class PowerPipeList(list,PowerPipeListCustom):
         '''
         return self.pyp.flatten_list(self)
 
+    
+    
+    def contains(self,target,input):
+        if '__contains__' in dir(input):
+            if target in input:
+                return True
+        
+        else:
+            if target == input:
+                return True
+    
+        return False
+    
     def after(self, target, after_n=1):
         '''
         consolidates after_n lines after matching target text to 1 line
@@ -190,11 +313,11 @@ class PowerPipeList(list,PowerPipeListCustom):
         out = []
         n = 0
         inputs = self.pyp.flatten_list(self)
-
         for input in inputs:
             n = n + 1
-            if target in input:
+            if self.contains(target,input):
                 out.append([ [input] + inputs[n:n + after_n] ])
+        
         return out
 
     def before(self, target, before_n=1):
@@ -210,13 +333,14 @@ class PowerPipeList(list,PowerPipeListCustom):
         out = []
         n = 0
         inputs = self.pyp.flatten_list(self)
-
         for input in inputs:
             n = n + 1
-            if target in input:
-                out.append([ [input] + inputs[n - before_n - 1:n - 1] ])
-
+            if self.contains(target,input):
+               out.append([ [input] + inputs[n - before_n - 1:n - 1] ])
         return out
+        
+
+        
 
     def matrix(self, target, matrix_n=1):
         '''
@@ -231,13 +355,12 @@ class PowerPipeList(list,PowerPipeListCustom):
         out = []
         n = 0
         inputs = self.pyp.flatten_list(self)
-
         for input in inputs:
             n = n + 1
-            if target in input:
+            if self.contains(target,input):
                 out.append([ inputs[n - matrix_n - 1:n - 1] + [input] + inputs[n:n + matrix_n]  ])
-
         return out
+       
     
     
 class PypStr(str,PypStrCustom):
@@ -258,6 +381,7 @@ class PypStr(str,PypStrCustom):
             self.dir = os.path.split(self.rstrip('/'))[0]
             self.file = os.path.split(self)[1]
             self.ext = self.split('.')[-1]
+            p.max = 0
         except:
             pass
 
@@ -285,6 +409,65 @@ class PypStr(str,PypStrCustom):
         
         return PypStr(self)
     
+    
+    def rekill(self, *args):
+        '''
+        replace each regex in args found in string with ''
+        @param args: regexes to remove
+        @type args: list<regex>
+        @return: string without the regexes
+        @rtype: PypStr
+        '''
+        
+        for arg in args:
+            self = re.sub(arg, '', self)
+            
+        return PypStr(self)
+    
+    def rereplace(self, regex, replacement):
+        '''
+        replace instances of regex in string with replacement
+        @param regex: the regex to replace
+        @type regex: str
+        @param replacement: the value to insert
+        @type replacement: str
+        @return: String with all instances replaced
+        @rtype: PypStr
+        '''
+        
+        self = re.sub(regex, replacement, self)
+        
+        return PypStr(self)
+
+    def refindall(self, to_match):
+        '''
+        returns a list of all matches of to_match in the string
+        @param to_match: the regex to match
+        @type to_match: str
+        @return: a list of all matches
+        @rtype: PypList
+        '''
+        return PypList(re.findall(to_match, self))
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     def letters(self):
         '''
         returns only letters
@@ -299,6 +482,7 @@ class PypStr(str,PypStrCustom):
             else:
                 new_string = new_string + ' '
         return [PypStr(x) for x in new_string.split() if x]
+        
     
     def punctuation(self):
         '''
@@ -345,7 +529,7 @@ class PypStr(str,PypStrCustom):
                 self = self.replace(char, ' ')
         return PypStr(delim.join([x for x in self.split() if x.strip()]))
     
-    def re(self,to_match):
+    def re(self,to_match,group=0):
         '''   
         returns characters that match a regex using to_match
         @return: portion of string that matches regex
@@ -356,7 +540,7 @@ class PypStr(str,PypStrCustom):
         
         match = re.search(to_match,self)
         if match:
-            return PypStr(match.group(0))
+            return PypStr(match.group(group))
         else:
             return ''
     
@@ -388,6 +572,7 @@ class Pyp(object):
     
     def __init__(self):
         self.history = {} #dictionary of all data organized input line by input line
+
         try: #occasionally, python loses pwd info
             self.pwd = os.getcwd()
         except:
@@ -405,7 +590,12 @@ class Pyp(object):
            
         return final_execute
     
-    def default_final_execute(self,cmds):
+    def default_final_execute(self,cmds,null):
+        '''
+        defines execute command
+        @param cmds: list
+        @param null: str
+        '''
         for cmd in cmds:
             os.system(cmd)
     
@@ -442,7 +632,7 @@ class Pyp(object):
         @return: list of commands to be evaluated
         @rtype: list<str>
         '''
-       
+        cmds = cmds.strip('|')
         cmd_array = []
         cmd = ''
         open_single = False
@@ -492,7 +682,7 @@ class Pyp(object):
             cmd_array.append(cmd) #gets last cmd
 
         
-        return [x for x in cmd_array if x]
+        return [x for x in cmd_array if x.strip()] #gets rid of extra spaces and nulls
 
     def load_macros(self,macro_path):
         '''
@@ -509,6 +699,10 @@ class Pyp(object):
             macro_ob.close()
         else:
            macros = {}
+
+        for macro in macros: #unicode sucks
+            macros[macro][u'command'] = [str(x) for x in macros[macro][u'command'] ]
+        
         return macros
 
     def write_macros(self, macros,macro_path, cmds):
@@ -667,8 +861,8 @@ class Pyp(object):
         '''
         
         return not self.rekeep(to_match)
-    
-    
+        
+        
     def keep(self,*args):
         '''
         keeps lines based on string matches
@@ -700,7 +894,7 @@ class Pyp(object):
         '''
         return not self.keep(*args)
 
-    def array_tracer(self, input,power_pipe=''):
+    def array_tracer(self,input,analysis_mode,power_pipe=''):
         '''
         generates colored, numbered output for lists and dictionaries and other types
         @param input: one line of input from evaluted pyp command
@@ -710,7 +904,7 @@ class Pyp(object):
         @return: colored output based on input contents
         @rtype: str
         '''
-        if not input and input is not 0: #TRANSLATE FALSES TO EMPTY STRINGS OR ARRAYS. SUPPLIES DUMMY INPUT TO KEEP LINES IF NEEDED.
+        if not input and input not in [0,0.0]: #TRANSLATE FALSES TO EMPTY STRINGS OR ARRAYS. SUPPLIES DUMMY INPUT TO KEEP LINES IF NEEDED.
             if options.keep_false or power_pipe:
                 input = ' '
             else:
@@ -720,40 +914,48 @@ class Pyp(object):
         nf = 0
         output = ''
         
-        if power_pipe:
+        if power_pipe:#labels line number of powerpipes
             n_index = Colors.MAGENTA + '[%s]' % (self.n) + Colors.GREEN
             final_color = Colors.OFF
-        else:
+        else: #for line by line
             n_index = ''
             final_color=''
         
+        
         #DEALS WITH DIFFERENT TYPES OF INPUTS
-        if type(input) in [ list, PypList, PowerPipeList] :#deals with lists
-
+        
+        input_type = type(input)
+        
+        if input_type in [ list, PypList, PowerPipeList] :#deals with lists
             for field in input:
                 if not nf == len(input):
                     if type(field)  in [str, PypStr]:
                         COLOR = Colors.GREEN
                     else:
                         COLOR = Colors.MAGENTA
-
                     output = str(output) + Colors.BOLD + Colors.BLUE + "[%s]" % nf + Colors.OFF + COLOR + str(field) + Colors.GREEN
                 nf = nf + 1
-            return  n_index + Colors.GREEN + Colors.BOLD + '[' + Colors.OFF + output + Colors.GREEN + Colors.BOLD + ']' + Colors.OFF 
+            final_output =  n_index + Colors.GREEN + Colors.BOLD + '[' + Colors.OFF + output + Colors.GREEN + Colors.BOLD + ']' + Colors.OFF
 
-        elif type(input) in [str, PypStr] :
-            return n_index + str(input) + final_color
-
-        elif type(input) in [int, float] :
-            return n_index + Colors.YELLOW + str(input) +  Colors.OFF 
+        elif input_type in [str, PypStr] : #clean output for non-pp operations. this should have no color
+            if analysis_mode: #put colors into output only if it's in analysis mode. 
+                n_index =  Colors.GREEN
+                final_color = Colors.OFF     
+            
+            final_output = n_index +  str(input) + final_color
+        
+        elif input_type in [int, float] :
+            final_output = n_index + Colors.YELLOW + str(input) +  Colors.OFF #had to comppromise here to keep string output clean.
  
-        elif type(input) is dict: #deals with dictionaries
-            for field in sorted(input,key=lambda x : x.lower()):
-                output = output + Colors.OFF + Colors.BOLD + Colors.BLUE  + field  + Colors.GREEN + ": " + Colors.OFF + Colors.GREEN + str(input[field]) + Colors.BOLD + Colors.GREEN + ',\n '
-            return n_index + Colors.GREEN + Colors.BOLD + '{' + output.strip().strip(' ,') + Colors.GREEN + Colors.BOLD + '}' + Colors.OFF
+        elif input_type is dict: #deals with dictionaries
+            for field in sorted(input,key=lambda x : x):
+                output = output + Colors.OFF + Colors.BOLD + Colors.BLUE  + str(field)  + Colors.GREEN + ": " + Colors.OFF + Colors.GREEN + str(input[field]) + Colors.BOLD + Colors.GREEN + ',\n '
+            final_output = n_index + Colors.GREEN + Colors.BOLD + '{' + output.strip().strip(' ,') + Colors.GREEN + Colors.BOLD + '}' + Colors.OFF
 
         else: #catches every else
-            return  n_index + Colors.MAGENTA + str(input) + Colors.OFF
+            final_output =  n_index + Colors.MAGENTA + str(input) + Colors.OFF
+        
+        return final_output
 
     def cmd_split(self, cmds):
         '''
@@ -800,8 +1002,9 @@ class Pyp(object):
 
             cmd = cmd + letter
 
-
+        
         cmd_array.append(cmd)
+        
         output = [(cmd_array, string_format)]
         return output
 
@@ -835,6 +1038,9 @@ class Pyp(object):
         minus =self.p.split('-')
         all= self.all_meta_split(self.p)
         comma = self.p.split(',')
+        tab = self.p.split('\t')
+        backslash = self.p.split('\\')
+        
         
         split_variables_raw = {
         
@@ -846,6 +1052,8 @@ class Pyp(object):
             'minus' :minus,
             'all' : all,
             'comma' : comma,
+            'tab': tab,
+            'backslash': backslash,
             
             'w' :whitespace,
             's' :slash,
@@ -855,6 +1063,8 @@ class Pyp(object):
             'm' :minus,
             'a' : all,
             'mm' : comma,
+            't': tab,
+            'b': backslash,
                               }
         #gets rid of empty fields
         split_variables = dict((x, PypList([PypStr(y) for y in split_variables_raw[x]])) for x in  split_variables_raw)
@@ -870,9 +1080,9 @@ class Pyp(object):
         '''
        
         temp_joins = []
-
         derived_string_format = self.history[self.n]['string_format'][-1]
         len_derived_str_format = len(derived_string_format.strip('%').split('%'))
+
         if len(self.p) == len_derived_str_format:
             string_format = derived_string_format #normal output
             for sub_p in self.p:
@@ -900,6 +1110,8 @@ class Pyp(object):
         minus = self.join_and_format('-')
         all = self.join_and_format(' ')
         comma = self.join_and_format(',')
+        tab = self.join_and_format('\t')
+        backslash = self.join_and_format('\\')
             
         join_variables = {
             'w' : whitespace,
@@ -910,6 +1122,8 @@ class Pyp(object):
             'm' : minus,
             'a' : all,
             'mm' : comma,
+            't': tab,
+            'b':backslash,
             
             'whitespace' : whitespace,
             'slash' : slash,
@@ -918,10 +1132,63 @@ class Pyp(object):
             'dot' : dot,
             'minus' : minus,
             'all' : all,
-            'comma' : comma  
+            'comma' : comma,
+            'tab': tab,
+            'backslash' : backslash,
+            
+              
                             }
 
         return join_variables
+    
+    
+    
+    def generic_variables(self):
+        '''
+        generates a dict of self.p arrays joined with various common metacharacters
+        @return: input joined by common metacharacters
+        @rtype: dict<str:str>
+        '''
+        
+        string_input = str(self.p)
+        whitespace = string_input
+        slash =string_input
+        underscore = string_input
+        colon = string_input
+        dot = string_input
+        minus =string_input
+        all = string_input
+        comma = string_input
+        tab = string_input
+        backslash = string_input
+            
+        generic_variables = {
+            'w' : whitespace,
+            's' : slash,
+            'u' : underscore,
+            'c' : colon,
+            'd' : dot,
+            'm' : minus,
+            'a' : all,
+            'mm' : comma,
+            't': tab,
+            'b':backslash,
+            
+            'whitespace' : whitespace,
+            'slash' : slash,
+            'underscore' : underscore,
+            'colon' : colon,
+            'dot' : dot,
+            'minus' : minus,
+            'all' : all,
+            'comma' : comma,
+            'tab': tab,
+            'backslash' : backslash,
+            
+              
+                            }
+
+        return generic_variables
 
     def translate_preset_variables(self, translate_preset_variables,file_input, second_stream_input):
         '''
@@ -958,12 +1225,13 @@ class Pyp(object):
                      'dollar': '$',
                      'pwd': self.pwd,
                      'date': datetime.datetime.now(),
+                     'math':math,
                      'env': os.environ.get,
                      'glob' : glob.glob,
                      'letters': 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
                      'digits': '0123456789',
                      'punctuation': """!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~""",
-                     'str':(PypStr),
+                     'str':(PypStr)
                              }        
         
         #removes nested entries from history
@@ -977,14 +1245,14 @@ class Pyp(object):
         # file
         if options.text_file:
             try:
-                fp = file_input[self.n]
+                fp = file_input[self.kept_n]
             except IndexError:
                 fp = ''
             presets['fp'] = fp
 
         # second stream
         try:
-            sp = second_stream_input[self.n]
+            sp = second_stream_input[self.kept_n]
         except IndexError:
             sp = ''
         
@@ -1011,18 +1279,20 @@ class Pyp(object):
         presets.update(PypFunctionCustom.__dict__) #adds user defined functions
         return presets
 
-    def initialize_n(self):
+    def blank_history(self):
         '''
         initializes history dict for a particular n,
         where n is the line of the input being processed
         '''
-        self.history[self.n] = {} #creates dict
-        self.history[self.n]['error'] = '' # error data
-        self.history[self.n]['history'] = [] #  
-        self.history[self.n]['history'].append(self.p) # records current p
-        self.history[self.n]['string_format'] = [] #used for formating output
-        self.history[self.n]['original_splits'] = {}#dict of original splits
-        self.history[self.n]['output'] = True
+        history= {} #creates dict
+        history['error'] = '' # error data
+        history['history'] = [] #  
+        #history['history'].append(self.p) # records current p
+        history['string_format'] = [] #used for formating output
+        history['original_splits'] = {}#dict of original splits
+        history['output'] = True
+        return history
+
 
     def safe_eval(self, cmd, variables):
         '''
@@ -1036,8 +1306,7 @@ class Pyp(object):
         @return: output from python evaluation
         @rtype: list<str>
         '''
-        
-        if not self.history[self.n]['error'] and self.history[self.n]['output']: #if no errors, go forward 
+        if not self.history[self.n]['error'] and self.history[self.n]['output'] is not False: #if no errors, go forward 
             total_output = []
             for cm_tuple in self.cmd_split(cmd):#cm_tuple consists of commands and string format.cmd_split splits each command into terms.
                 string_format = cm_tuple[1] #how the results will eventually be formatted.
@@ -1048,21 +1317,24 @@ class Pyp(object):
                     except KeyboardInterrupt:
                         print Colors.RED + "killed by user" + Colors.OFF
                         sys.exit()
+                    except IndexError: #ignores index errors like all other shell commands
+                        self.history[self.n]['string_format'].append('%s')
+                        return [''] # this is total_output.                        
                     except Exception, err:
                         self.history[self.n]['error'] = Colors.RED + 'error: ' + str(err) + Colors.OFF, Colors.RED + cmd + Colors.OFF
+                        self.history[self.n]['string_format'].append('%s')#adds default string format if error
+                        return ['']
                         break
                     #totals output for each cm
                     try:
                         if output is True : #allows truth tests
                             output = self.p
                     except:
-                        pass                    
-                    
+                        pass  
                     total_output.append(output)
-
-                    #updates self.history dictionary
                 self.history[self.n]['string_format'].append(string_format)
-                   #generates printable output                 
+
+            
             return total_output
 
     
@@ -1094,8 +1366,7 @@ class Pyp(object):
                 print Colors.RED + "YOU'RE LIST VARIABLE DOES NOT EXIST: " + Colors.GREEN + power_pipe + Colors.OFF
                 sys.exit()
         except: #default output is null per line
-            user_output =[' ']   
-    
+            user_output =['']   
         return user_output
     
     def update_history(self, total_output,second_stream_input,file_input, power_pipe):
@@ -1110,12 +1381,12 @@ class Pyp(object):
         @param power_pipe: kind of power pipe
         @type power_pipe: string
         '''
-        
-        #marks null output, as '' except when output  is zero, poerpope, or we are printing out null lines
-        if (not total_output or not [x for x in total_output if x]or  self.history[self.n]['error'])\
-            and total_output != [0]\
-            and not power_pipe: #kill irrelevant output
+        #marks null output as False EXCEPT when output is zero, powerpipe. Null output is not printed out.
+        if (total_output in [False]\
+            or  [x for x in self.flatten_list(total_output) if x is False ] == total_output )\
+            and not power_pipe:
             
+        #make irrelevent data false
             self.history[self.n]['history'].append(False)
             self.history[self.n]['output']=False
         else: # good output
@@ -1125,20 +1396,32 @@ class Pyp(object):
             contains_list = False
             #actual output is p or pp unless spp is invoked.
             user_input = self.get_user_input(total_output, second_stream_input, file_input, power_pipe)
-            self.kept_n = self.kept_n + 1 #only update if output is kept
-
+        
             #update history array
+            
+            contains_list = False
             for out in total_output: # forms an array called_output array of strings or array_traced strings
                 history_array.append(out) # for feeding back to pipe
-                contains_list = True if type(out) not in [str, PypStr] else False
+                if type(out)  in [list, PypList]:
+                    contains_list = True 
+            
+            contains_number = True if [x for x in total_output if type(x) in [int,float]] == total_output else False
+            contains_dict = True if [x for x in total_output if type(x) in [dict]] == total_output else False
+            #toggle analysis mode if not all input is strings
+        
+            if [x for x in total_output if type(x) in [str,PypStr]] == total_output:
+                analysis_mode = False
+            else:
+                analysis_mode = True
             
             #update actual output
             for out in user_input:
-                output_array.append(self.array_tracer(out, power_pipe)) # for output
-            
+                traced_output = self.array_tracer(out,analysis_mode, power_pipe)
+                output_array.append(traced_output) # for output
+
             self.history[self.n]['output'] = string_format % (tuple(output_array))
             
-            if contains_list: #this section prevents buildup of recursive lists.
+            if contains_list or contains_number or contains_dict:# or format_mismatch: #this section prevents buildup of recursive lists.
                 self.history[self.n]['history'].append(total_output) # just adds list to total output if list
             else:
                 self.history[self.n]['history'].append(string_format % (tuple(history_array))) # adds properly formatted string if string.
@@ -1150,16 +1433,79 @@ class Pyp(object):
         @type iterables: list<str>
         '''
         out = []
-        try:
-            if [x for x in iterables if type(x) in [str, PypStr]]:
-                out = out + iterables
+        if '__iter__' in dir(iterables) or type(iterables) in [list, PowerPipeList,tuple,PypList]:
+            #expand history objects
+            if [x for x in iterables if type(x) in [HistoryObject]]:            
+            
+                expanded_iterables = []
+                for iterable in iterables:
+                    if type(iterable) in [HistoryObject]:
+                        iterable = iterable.wrapped_object()
+                    expanded_iterables.append(iterable)
+                    iterables = expanded_iterables
+            #if [x for x in iterables if type(x) in [str, PypStr,HistoryObject,type,int,float]]:
+
+            if [x for x in iterables if type(x) not in [list,PowerPipeList,tuple,PypList]]: #str,int,etc
+                out = out + iterables #add the lists and be done
+
             else:
                 for x in iterables:
                     out = out + self.flatten_list(x)
-        except:              #catches non iterables
-            out = [iterables]
-    
+        else:              #catches non iterables
+            out = [iterables] #non-iterables
         return out
+    
+    
+    
+    def stamp_history(self,power_pipe_inputs, new_inputs):
+        '''
+        makes new object stamped with all history info
+        @param power_pipe_inputs: PowerPipeList
+        @param new_inputs: Booleon
+        '''
+        history_inputs= []
+        input_index = 0
+
+        for input in power_pipe_inputs:
+            
+            input_type = type(input)
+            input_copy = input
+            input = HistoryObject(input)
+            if input_index in self.history and  self.history[input_index]['output'] is False: #ignore false
+                input_index = input_index + 1 
+                continue
+            elif not new_inputs and input_index in self.history: #stamps inputs already in history
+                    input.history = self.history[input_index] #get from history dict
+            else:
+                input.history = self.blank_history()      #new input. make fresh entry
+                input.history['history'] = [input_copy]
+                input.history['string_format'] = ['%s'] 
+            input.type = input_type
+            history_inputs.append(input)
+            input_index = input_index + 1 
+        return PowerPipeList(history_inputs)
+    
+    
+    def power_pipe_sum(self, ints): 
+        '''
+        overloaded sum operator. ignores non-digit strings. converts everything else to ints or floats
+        @param ints: varies
+        '''
+        
+        new_ints = []
+        for line in ints:
+            if 'history' in dir(line):
+                line = line.wrapped_object()
+            if type(line) in [int,float]:
+                new_ints.append(line)
+            elif type(line) in [str, PypStr]:
+                if line.isdigit(): 
+                    new_ints.append(int(line))
+                elif line.replace('.','').isdigit():
+                    new_ints.append(float(line))
+        return sum(new_ints)
+    
+    
     
     def power_pipe_eval(self, cmd, inputs, second_stream_input, file_input, power_pipe_type):
         '''
@@ -1174,23 +1520,21 @@ class Pyp(object):
         @rtype: list<str>
         '''
         variables = {}
-        self.history = {}
         padded_output = []
-        
-        
+       
         variables['str'] = PypStr #useful for list comps
-        variables['n'] = self.kept_n
-        variables['on'] = self.n
         
         inputs = self.flatten_list(inputs)
+
         
-        inputs = [x for x in inputs if self.unlist_p(x) is not False] #keeps unfiltered output
+        variables['pp'] = self.stamp_history(inputs, False)
+        variables['spp'] = self.stamp_history(second_stream_input, True)
+        variables['fpp'] = self.stamp_history(file_input, True)
+        variables['sum'] = self.power_pipe_sum
+        variables['math'] = math 
+       
         
-        variables['pp'] = PowerPipeList(inputs)
-        variables['spp'] = PowerPipeList(second_stream_input)
-        variables['fpp'] = PowerPipeList(file_input)
-        
-        
+         
         try:
             output = eval(cmd, variables) #1000 lines of code wrap this line!!!
         except KeyboardInterrupt:
@@ -1199,24 +1543,79 @@ class Pyp(object):
         except Exception, err:
             print Colors.RED + 'error: ' + str(err) + Colors.OFF, Colors.RED + cmd + Colors.OFF
             sys.exit()
-
+        
         if output is None: #allows use of inplace methods like sort
             output = variables[power_pipe_type]
         
         if type(output)  in [int, float]: #keeps output in array
             output = [output]
 
-        if type(output) in [str, PypStr, tuple]: #makes sure output is in list of lists
+        if type(output) in [HistoryObject]: #makes sure output is in list of lists
+            output = [output]
+        
+        if type(output) in [str, PypStr,tuple,type]: #makes sure output is in list of lists
             output = [[output]]
-
+        
         if [x for x in output if type(x) in [tuple]]:#changes tuples to lists 
             output = [PypList(x) for x in output if type(x) in [tuple]]
-        
-        if len(output) == 1:      #turn off powerpipe if output is single item
-            power_pipe_type = ''                
-        
-        return output,  power_pipe_type
+     
+      
+            
+        history_output = self.restore_history(output)         
+    
+        if len(history_output) == 1:      #turn off powerpipe if output is single item
+            power_pipe_type = ''      
 
+        return history_output,  power_pipe_type
+     
+        
+    def restore_history(self, output):  
+        '''
+        restores history dictionary to reflect changes. recasts all objects to their original form.
+        '''
+        
+        self.history = {}
+        # try to preserve history...if this fails, we go with zero history
+        output_index = 0
+        history_output = []
+        for out in output:  
+            if 'history' in dir(out):
+                history =  out.history
+                out = self.recursive_recast(out) #recast back 
+            else: #non stamped and deeply stamped both need new entries
+                out = self.recursive_recast(out) #recast right away
+                history = self.blank_history()     #new input. make fresh entry
+                history['history'] = [self.unlist_p(out)]
+                history['string_format'] = ['%s'] 
+            
+            history_output.append(out)
+            self.history[output_index] = history
+            output_index = output_index + 1
+        
+        return history_output
+  
+    
+    def recursive_recast(self, out):
+        '''
+        takes nested list. recasts all objects to their original type if they are stamped
+        @param out: varies
+        '''
+        try:
+            if 'type' in dir(out): #its stamped
+                return out.type(out)
+            elif type(out) in [list,PowerPipeList]: #try to return list
+                return [self.recursive_recast(x) for x in out]
+
+            elif type(out) in [tuple]: 
+                return ' '.join(out)                #user is using commas to join items with spaces
+            else:                                   #for everything else.
+                return out
+        except:                          
+            return out                              #who knows what people will try.
+    
+    
+    
+    
     def detect_power_pipe(self, command, power_pipe_type):
         '''
         detects presense of powerpipe
@@ -1267,6 +1666,7 @@ class Pyp(object):
         @rtype: list<str>
         '''
         #POWER PIPES 
+        
         power_pipe = '' #power pipe is off by default
         if self.detect_power_pipe(cmd, 'pp') :
             input_set,power_pipe = self.power_pipe_eval( cmd, input_set, second_stream_input, file_input,'pp')
@@ -1277,7 +1677,6 @@ class Pyp(object):
         elif  self.detect_power_pipe(cmd, 'fpp'):
             file_input, power_pipe = self.power_pipe_eval( cmd, input_set, second_stream_input, file_input,'fpp')
             cmd = 'p'
-       
         return cmd, input_set,second_stream_input, file_input, power_pipe
 
     def unlist_p(self, p):
@@ -1294,7 +1693,7 @@ class Pyp(object):
         return p
     
     
-    def process(self, inputs, file_input, cmds, second_stream_input):
+    def process(self, inputs, file_input, cmds, second_stream_input, process_as_list):
         '''
         takes primary data from input stream (can be string, array or dictionary), applies user commands to it, 
         captures this output. Also, generates several variables such as line counter and 
@@ -1309,50 +1708,79 @@ class Pyp(object):
         @param second_stream_input: second stream input
         @type second_stream_input: list<str>
         '''
-    
+  
         while cmds: #cmds are commands that will be executed on the input stream       
+            if process_as_list:   #non powerpipe runs are handled remotely
+                 self.kept_n = 0 # counter of kept lines. needs to be avail for eval, so starts as 0
             self.n = -1 # overall line counter. will change to 0 asap.
-            self.kept_n = 0 # counter of kept lines. needs to be avail for eval, so starts as 0
+            
             cmd = cmds.pop(0)
             cmd, input_set,second_stream_input, file_input, power_pipe = self.format_input(cmd, inputs,second_stream_input, file_input)
-            original_input_set = input_set[:]
-            #MAIN LOOP 
-            while input_set:
-                
-                self.p = self.unlist_p(input_set.pop(0)) # p is main line variable being manipulated                            
-                self.n = self.n + 1  # raises counters
-                variables = {}
-                
-                if not self.n in self.history: # initializes self.history dict for line
-                    self.initialize_n()
-                else:
-                    if self.p is False: #skip false output but n is updated
-                        continue
-                
-                if type(self.p) in [ str, PypStr]:                          # p is string    
-                    variables = self.string_splitter()
-                    if not self.history[self.n]['original_splits']: #makes variables dealing with original input
-                       self.history[self.n]['original_splits'] = dict(('o' + x, variables[x]) for x in variables)
-                    if not self.history[self.n]['output']: #kills o variables if there is no output
-                        self.history[self.n]['original_splits'] = dict(('o' + x, '') for x in variables)
+            
+            original_input_set = input_set[:] 
 
-                elif type(self.p) in [list, PypList] and not power_pipe:                 # p is list of lists, constructs various joins 
-                    try:                                                   #for going from list to powerpipe
-                        variables = self.array_joiner()
-                    except:
-                        pass
-                        
-
-                variables.update(self.translate_preset_variables(original_input_set,file_input, second_stream_input)) #add incrementals
-                variables.update(self.history[self.n]['original_splits']) # updates with original splits
-
-                total_output = self.safe_eval(cmd, variables)
-                self.update_history(total_output,second_stream_input,file_input ,power_pipe)
-            #takes output, feeds back into input
-        
+            while input_set:   
+                self.process_line(cmd,input_set, original_input_set,second_stream_input,file_input ,power_pipe)
+                
+                if process_as_list and  self.history[self.n]['output'] != False: #increments line n
+                    self.kept_n = self.kept_n + 1 #only update if output is kept
+            
+            
             new_input = [self.history[x]['history'][-1] for x in self.history ] # takes last output as new input
-            self.process(new_input, file_input, cmds, second_stream_input) #process new input
-
+            
+            self.process(new_input, file_input, cmds, second_stream_input,process_as_list) #process new input
+            
+    
+    def process_line(self,cmd, input_set,original_input_set, second_stream_input,file_input ,power_pipe):
+            '''
+            processes individual cmds per line. updates history and counters
+            @param inputs: inputs from std-in or previous pyp eval
+            @type inputs: str,list
+            @param file_input: inputs from file
+            @type file_input: list
+            @param cmds: python commands to be evaluated
+            @type cmds: list<str>
+            @param second_stream_input: second stream input
+            @type second_stream_input: list<str>
+            '''
+            
+            self.p = self.unlist_p(input_set.pop(0)) # p is main line variable being manipulated                            
+            self.n = self.n + 1  # raises counters
+            variables = {}
+            
+            if self.p is False: #skip false output but n is updated
+                return
+            
+            if not self.n in self.history: # initializes self.history dict for line. always for quick out.
+                self.history[self.n] = self.blank_history()
+                self.history[self.n]['history'].append(self.p)
+            
+            
+            if options.quick:  #bypass split join variables
+                variables={}
+            elif type(self.p) in [ str, PypStr]:                          # p is string    
+                variables = self.string_splitter()
+                if not self.history[self.n]['original_splits']: #makes variables dealing with original input
+                   self.history[self.n]['original_splits'] = dict(('o' + x, variables[x]) for x in variables)
+                if not self.history[self.n]['output']: #kills o variables if there is no output
+                    self.history[self.n]['original_splits'] = dict(('o' + x, '') for x in variables)
+            elif type(self.p) in [list, PypList] and not power_pipe:                 # p is list of lists, constructs various joins 
+                try:                                                   #for going from list to powerpipe
+                    variables = self.array_joiner()
+                except:
+                    pass
+            else:
+                variables = self.generic_variables()
+        
+            
+            variables.update(self.translate_preset_variables(original_input_set,file_input, second_stream_input)) #add incrementals
+            variables.update(self.history[self.n]['original_splits']) # updates with original splits
+            
+            total_output = self.safe_eval(cmd, variables)
+            self.update_history(total_output,second_stream_input,file_input ,power_pipe)
+          
+    
+    
     def output(self, total_cmds):
         '''
         generates final output.
@@ -1360,26 +1788,39 @@ class Pyp(object):
         @type total_cmds: list<str>
         '''
         execute_cmds = []
+        #print self.history
         for self.history_index in self.history:
             error = self.history[self.history_index]['error']
             
-            if not error or "list index out of range" in error[0] or  'string index out of range' in error[0] : #no error
+            if not error : #no error
                 
                 cmd = self.history[self.history_index]['output'] #color formated output
-                
-                if cmd: #kept commands
-                    if options.execute: #executes command        
+                #print cmd
+                #if 1: ########################TESTING
+                if cmd != False: #kept commands
+                    if options.execute or options.execute_aux: #executes command        
                         execute_cmds.append(cmd)
+                    elif options.ignore_blanks and not cmd.strip():
+                        pass
                     else:
                         print cmd # normal output
+               
                 elif options.keep_false: #prints blank lines for lost False commands 
-                    print 
+                    print  
+
+            
             else: #error
                 print Colors.RED + self.history[self.history_index]['error'][0] + Colors.RED + ' : ' + self.history[self.history_index]['error'][1] + Colors.OFF
+                
         
         if execute_cmds:
-            self.final_execute(execute_cmds) 
-
+            if not options.execute_aux:
+                threads = 10
+            else:
+                threads = options.execute_aux
+            
+            self.final_execute(execute_cmds, threads) 
+    
     
     def initilize_input(self):
         '''
@@ -1390,26 +1831,26 @@ class Pyp(object):
         '''
 
         if options.manual:
-            print Docs.manual
+            print Docs.manual()
             sys.exit()
             
         if options.unmodified_config:
             print Docs.unmodified_config
             sys.exit()
         
-        rerun_path = '/%s/pyp_rerun_%d.txt' %(tempfile.gettempdir(),os.getppid())        
-
+        rerun_path = '%s/pyp_rerun_%d.txt' %(tempfile.gettempdir(),os.getppid())        
+        
+        
         if options.rerun: #deals with rerunning script with -r flag
             if not os.path.exists(rerun_path):
                 gpid = int(os.popen("ps -p %d -oppid=" % os.getppid()).read().strip())
-                rerun_gpid_path = '/%s/pyp_rerun_%d.txt' %(tempfile.gettempdir() ,gpid)
+                rerun_gpid_path = '%s/pyp_rerun_%d.txt' %(tempfile.gettempdir() ,gpid)
                 if os.path.exists(rerun_gpid_path):
                     rerun_path = rerun_gpid_path
                 else:
                     print Colors.RED + rerun_path + " does not exist" + Colors.OFF
                     sys.exit()
-            pipe_input = [x.strip() for x in open(rerun_path) if x.strip()]
-            #print pipe_input
+            pipe_input = open(rerun_path) 
         
         elif options.blank_inputs:
             pipe_input = []
@@ -1418,23 +1859,100 @@ class Pyp(object):
                 pipe_input.append('')
        
         
+        
+        
         elif options.no_input:
             pipe_input = ['']
         
         else:
-            pipe_input = [x.rstrip() for x in sys.stdin.readlines() if x.strip()]
-            if not pipe_input:
-                pipe_input = [''] #for using control d to activate comands with no input
+            pipe_input = sys.stdin
+
+        if not pipe_input:
+            pipe_input = [''] #for using control d to activate comands with no input
                 
-        rerun_file = open(rerun_path, 'w')
-        rerun_file.write('\n'.join([str(x) for x in pipe_input]))
-        rerun_file.close()
+        return pipe_input #is iterable file object or list
 
 
-        inputs = pipe_input
+    def input_filter(self,line):
+        if options.ignore_blanks:
+            if line.strip():
+                return line.strip()
+            else:
+                return False
+        else:
+            return self.strip_last_newline(line)
 
-        return [[PypStr(x)] for x in inputs]
+    def strip_last_newline(self, line):
+        return line[::-1].replace('\n','',1)[::-1]  #strips trailing newlines
+    
+    
+    def write_rerun(self, pipe_input):
+        if not options.rerun:
+            rerun_path = '%s/pyp_rerun_%d.txt' %(tempfile.gettempdir(),os.getppid())        
+            rerun_file = open(rerun_path, 'w')
+            rerun_file.write('\n'.join([str(x) for x in pipe_input]))
+            rerun_file.close()
+    
+        
+    
+    
+    def process_master_switch(self,inputs, file_input, cmds, second_stream_input):
+        '''
+        switches between line by line and list operation based on presence of pp, spp, fpp
+        @param inputs:
+        @param file_input:
+        @param cmds:
+        @param second_stream_input:
+        '''
 
+        process_as_list = False
+        inputs_to_write = []
+        for cmd in cmds:
+            for pp_type in ['pp','spp','fpp']:
+                if self.detect_power_pipe(cmd, pp_type):
+                    process_as_list = True
+        
+        if options.execute or options.execute_aux:
+            process_as_list = True
+            
+        
+        if process_as_list: #normal operation allowing list operations
+            inputs_to_write = []  #safe copy
+            clean_inputs = []
+            for input in inputs:
+                clean_input = self.input_filter(input)
+                if  clean_input is not False:
+                    clean_inputs.append(PypStr(clean_input))
+                inputs_to_write.append(self.strip_last_newline(input))
+                
+            self.process(clean_inputs, file_input, cmds, second_stream_input, process_as_list)
+            self.output(cmds)
+        
+        
+        else:              #line by line mode eraseing memory after every print
+            #self.n = -1 # overall line counter. will change to 0 asap.
+            self.kept_n = 0 # counter of kept lines. needs to be avail for eval, so starts as 0
+            cmds_copy = cmds[:]
+
+            for line in inputs :
+                cmds = cmds_copy[:]
+                line = self.input_filter(line)
+                
+                if line is not False: #catches lines filtered out by --ignore_blanks
+                    line = PypStr(line)
+                    inputs_to_write.append(self.strip_last_newline(line))
+                    self.process([line], file_input, cmds, second_stream_input,process_as_list) #recursive processing to generate history dict 
+                    if self.history and self.history[0]['output'] != False: #first part allows blank ""
+                        self.kept_n = self.kept_n + 1
+                    
+                    self.output(cmds) #output text or execute commands from history dict
+                    self.history = {} #new history every run
+
+                    
+                    
+        self.write_rerun(inputs_to_write)
+    
+    
     def main(self):
         '''generates input stream based on file, std-in options, rerun, starts process loop, generates output'''
         second_stream_input = [PypStr(x) for x in args[1:]] #2nd stream input
@@ -1457,26 +1975,29 @@ class Pyp(object):
         self.list_macros(macros)
         self.delete_macros(action_macros, action_macros_path)
 
+        
         if not args: # default command is just to print.
             cmds = ['p']
         else:
             cmds = self.cmds_split(args[0], macros)
 
         self.write_macros(action_macros, action_macros_path, cmds) #needs cmds before we write macros
-
-        inputs = self.initilize_input() #figure out our input stream
-
-        self.process(inputs, file_input, cmds, second_stream_input,) #recursive processing to generate history dict
-
-        self.output(cmds) #output text or execute commands from history dict
         
-
-
+        inputs = self.initilize_input() #figure out our input stream
+        
+        self.process_master_switch(inputs, file_input, cmds, second_stream_input)
+        
+        
+                
+            
 
 
 
 class Docs():
-    manual = ''' 
+    @classmethod
+    def manual(cls):
+        return '''
+
     ===================================================================================
     PYED PIPER MANUAL
     
@@ -1925,8 +2446,10 @@ class Docs():
         p.clean(delimeter)   removes all metacharacters except for slashes, dots and 
                              the joining delimeter (default is "_")
         p.re(REGEX)          returns portion of string that matches REGEX regular 
-                             expression. works great with p.replace(p.re(REGEX),STR) 
-        
+                             expression. works great with p.replace(p.re(REGEX),STR)
+        p.rekill(RE1,RE2...) removes matches of specified regexes
+        p.rereplace(re, str) replaces all matches of regex with str
+        p.refindall(re)      returns a list of all matches of regex
         p.dir                directory of path
         p.file               file name of path
         p.ext                file extension (jpg, tif, hip, etc) of path
@@ -2164,22 +2687,25 @@ if __name__ == '__main__':
     parser.add_option("-g", "--macro_group", action='store_true', help="specify group macros for save and delete; default is user")
     parser.add_option("-t", "--text_file", type='string', help="specify text file to load. for advanced users, you should typically cat a file into pyp")
     parser.add_option("-x", "--execute", action='store_true', help="execute all commands.")
+    parser.add_option("-q", "--quick", action='store_true', help="turbo mode for fast output. pyp variables not initialized.")
+    parser.add_option("-a", "--execute_aux", type='int', help="execute commands with auxillary data with custom executer")
     parser.add_option("-c", "--turn_off_color", action='store_true', help="prints raw, uncolored output")
     parser.add_option("-u", "--unmodified_config", action='store_true', help="prints out generic PypCustom.py config file")
     parser.add_option("-b", "--blank_inputs", action='store', type='string', help="generate this number of blank input lines; useful for generating numbered lists with variable 'n'")
     parser.add_option("-n", "--no_input", action='store_true', help="use with command that generates output with no input; same as --dummy_input 1")
+    parser.add_option("-i", "--ignore_blanks", action='store_true', help="remove blank lines from output")
     parser.add_option("-k", "--keep_false", action='store_true', help="print blank lines for lines that test as False. default is to filter out False lines from the output")
-    parser.add_option("-r", "--rerun", action="store_true", help="rerun based on automatically cached data from the last run. use this after executing \"pyp\", pasting input into the shell, and hitting CTRL-D")
+    parser.add_option("-r", "--rerun", action="store_true", help="rerun based on automatically cached data from the last run. use this after executing \"pyp\", pasting input into the shell, and hitting CTRL-D TWICE")
     
     (options, args) = parser.parse_args()
     
-    if options.turn_off_color or options.execute: # overall color switch asap.
+    if options.turn_off_color or options.execute or options.execute_aux: # overall color switch asap.
         Colors = NoColors
-    
-    try:
-        pyp = Pyp().main()
-    except Exception, err:
-        print Colors.RED + str(err) + Colors.OFF 
+
+    #try:
+    pyp = Pyp().main()
+    #except Exception, err:
+#        print Colors.RED + str(err) + Colors.OFF 
    
         
         
