@@ -1397,12 +1397,12 @@ class Pyp(object):
             print Docs.unmodified_config
             sys.exit()
         
-        rerun_path = '/%s/pyp_rerun_%d.txt' %(tempfile.gettempdir(),os.getppid())        
+        rerun_path = '%s/pyp_rerun_%d.txt' %(tempfile.gettempdir(),os.getppid())        
 
         if options.rerun: #deals with rerunning script with -r flag
             if not os.path.exists(rerun_path):
                 gpid = int(os.popen("ps -p %d -oppid=" % os.getppid()).read().strip())
-                rerun_gpid_path = '/%s/pyp_rerun_%d.txt' %(tempfile.gettempdir() ,gpid)
+                rerun_gpid_path = '%s/pyp_rerun_%d.txt' %(tempfile.gettempdir() ,gpid)
                 if os.path.exists(rerun_gpid_path):
                     rerun_path = rerun_gpid_path
                 else:
